@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 4.2</title>
+    <title>Navigate Student Engagement Metrics App - Version 4.4</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -640,8 +640,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V4.2</h1>
-            <div class="subtitle">Version 4.2 - Released February 9, 2026</div>
+            <h1>📚 Navigate Student Engagement Metrics App_V4.4</h1>
+            <div class="subtitle">Version 4.4 - Released February 9, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
         </header>
 
@@ -892,9 +892,11 @@
                         <ul style="list-style-type: none; padding: 0; margin-bottom: 15px; columns: 2;">
                             <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">ASAP</li>
                             <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">College Discovery</li>
+                            <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">CUNY Start</li>
                             <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">Health Sciences</li>
                             <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">International Student Services</li>
                             <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">Math, Engineering & Computer Science</li>
+                            <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">Peer Advisor Academy</li>
                             <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">Student Advising Services</li>
                             <li style="padding: 5px 10px; background: #c6f6d5; border-left: 3px solid #48bb78; font-size: 13px; margin-bottom: 3px;">Veterans Services</li>
                         </ul>
@@ -952,6 +954,9 @@
                             </li>
                             <li style="padding: 8px 12px; background: #fee; border-left: 3px solid #f43f5e; margin-bottom: 8px; font-size: 14px;">
                                 <strong>Option 3:</strong> Care Unit = "LaGuardia Cares" <em style="color: #9f1239;">(regardless of Location)</em>
+                            </li>
+                            <li style="padding: 8px 12px; background: #fee; border-left: 3px solid #f43f5e; margin-bottom: 8px; font-size: 14px;">
+                                <strong>Option 4:</strong> Location = "VP of Student Affairs" <em style="color: #9f1239;">(regardless of Care Unit)</em>
                             </li>
                         </ul>
                         <div style="background: #fef3c7; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
@@ -1557,6 +1562,25 @@
                 } else {
                     loginData = new Set();
                     hasLoginData = false;
+                }
+
+                // Filter out records with empty Student IDs from all data sources
+                const apptCountBefore = appointmentData.length;
+                appointmentData = appointmentData.filter(function(row) {
+                    return row['Student ID'] && row['Student ID'].toString().trim() !== '';
+                });
+                if (appointmentData.length < apptCountBefore) {
+                    console.log(`Filtered out ${apptCountBefore - appointmentData.length} appointment records with empty Student IDs`);
+                }
+
+                if (hasEventsData) {
+                    const eventCountBefore = eventData.length;
+                    eventData = eventData.filter(function(row) {
+                        return row['Student ID'] && row['Student ID'].toString().trim() !== '';
+                    });
+                    if (eventData.length < eventCountBefore) {
+                        console.log(`Filtered out ${eventCountBefore - eventData.length} event records with empty Student IDs`);
+                    }
                 }
 
                 // Process and analyze data (with yields to prevent freezing)
@@ -3516,9 +3540,11 @@
             const advisingLocations = [
                 'ASAP',
                 'College Discovery',
+                'CUNY Start',
                 'Health Sciences',
                 'International Student Services',
                 'Math, Engineering & Computer Science',
+                'Peer Advisor Academy',
                 'Student Advising Services',
                 'Veterans Services'
             ];
@@ -3555,6 +3581,7 @@
             return careUnit === 'Campus Life' || 
                    location === 'CUNY Edge' || 
                    location === 'LaGuardia Cares' ||
+                   location === 'VP of Student Affairs' ||
                    careUnit === 'LaGuardia Cares';
         }
 
@@ -4142,10 +4169,10 @@
                 content += '<h3>📖 Category Rules Reference</h3>';
                 content += '<p style="font-size: 13px; color: #718096; margin-bottom: 10px;">An appointment/event is categorized if it matches ANY of these rules:</p>';
                 content += '<ul style="font-size: 13px; margin-left: 20px; line-height: 1.8;">';
-                content += '<li><strong>Advising:</strong> Care Unit = "Advising" + approved Location</li>';
+                content += '<li><strong>Advising:</strong> Care Unit = "Advising" + approved Location (incl. CUNY Start, Peer Advisor Academy)</li>';
                 content += '<li><strong>Career Services:</strong> Care Unit = "Career Services"</li>';
                 content += '<li><strong>Tutoring:</strong> Care Unit = "Tutoring & Technology" + approved Location</li>';
-                content += '<li><strong>Campus Life:</strong> Care Unit = "Campus Life" OR "LaGuardia Cares" OR Location = "CUNY Edge" (EXCLUDES Location = "Athletics & Recreation")</li>';
+                content += '<li><strong>Campus Life:</strong> Care Unit = "Campus Life" OR "LaGuardia Cares" OR Location = "CUNY Edge" OR "VP of Student Affairs" (EXCLUDES Location = "Athletics & Recreation")</li>';
                 content += '<li><strong>Enrollment:</strong> Care Unit = "Enrollment"</li>';
                 content += '<li><strong>Paying for College:</strong> Care Unit = "Paying for College"</li>';
                 content += '<li><strong>Academic Depts & Library:</strong> Care Unit = "Academic Departments & Library"</li>';
