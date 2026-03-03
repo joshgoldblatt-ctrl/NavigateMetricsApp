@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 4.4b</title>
+    <title>Navigate Student Engagement Metrics App - Version 4.5</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -640,8 +640,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V4.4b</h1>
-            <div class="subtitle">Version 4.4b - Released March 3, 2026</div>
+            <h1>📚 Navigate Student Engagement Metrics App_V4.5</h1>
+            <div class="subtitle">Version 4.5 - Released March 3, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
         </header>
 
@@ -1000,10 +1000,7 @@
                     <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
                         <h3 style="color: #7c3aed; font-size: 18px; margin-bottom: 15px;">🔄 Transfer Support Engagement</h3>
                         <div style="background: #f5f3ff; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                            <strong style="color: #5b21b6;">Appointment Rule:</strong> Location = "Transfer Support" (any Care Unit)
-                        </div>
-                        <div style="background: #ede9fe; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #5b21b6;">Event Rule:</strong> Care Unit = "Transfer" OR "Transfer Support (TEI)" (case-insensitive)
+                            <strong style="color: #5b21b6;">Appointment & Event Rule:</strong> Care Unit = "Transfer" AND Location = "Transfer Engagement Initiative (TEI)"
                         </div>
                     </div>
                 </div>
@@ -1160,63 +1157,31 @@
                 </table>
             </div>
 
-            <!-- Location Contributions Dashboard (Grouped by Category) -->
-            <div class="table-container" id="locationContributionsSection" style="display: none;">
-                <h3>📍 Location Contributions by Category</h3>
+            <!-- Combined Contributions Dashboard (Grouped by Category) -->
+            <div class="table-container" id="contributionsSection" style="margin-top: 30px;">
+                <h3>📍 Contributions by Category & Location</h3>
                 <p style="color: #718096; margin-bottom: 15px; font-size: 14px;">
-                    This table shows which Locations contribute to each engagement category. 
-                    Locations may appear under multiple categories if they contribute to more than one.
+                    This table shows how enrolled students engage across categories, broken down by location and source type (appointments, check-ins, and events).
                 </p>
                 <div style="margin-bottom: 15px;">
-                    <button class="export-btn" onclick="exportLocationContributions()" style="background: #059669; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    <button class="export-btn" onclick="exportContributions()" style="background: #059669; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">
                         📥 Export to CSV
                     </button>
                 </div>
                 <div style="overflow-x: auto;">
-                    <table id="locationContributionsTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <table id="contributionsTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
                             <tr style="background: #f7fafc;">
                                 <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Category</th>
                                 <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Location</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #fef3c7;">Total Appts</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #fef3c7;">Unique Students</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #d1fae5;">Enrolled Appts</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #d1fae5;">Unique Enrolled Students</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #dbeafe;">% Appts w/ Enrolled</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #dbeafe;">Unique Students</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #d1fae5;">Appointments</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #fef3c7;">Check-ins</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #e9d5ff;">Events</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #f0f9ff;">Total</th>
                             </tr>
                         </thead>
-                        <tbody id="locationContributionsBody">
-                            <!-- Rows will be dynamically inserted here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Events Contributions Dashboard -->
-            <div class="table-container" id="eventsContributionsSection" style="display: none;">
-                <h3>🎉 Event Contributions to Categories</h3>
-                <p style="color: #718096; margin-bottom: 15px; font-size: 14px;">
-                    This table shows event attendance data, sorted by Care Unit and Event Name.
-                </p>
-                <div style="margin-bottom: 15px;">
-                    <button class="export-btn" onclick="exportEventsContributions()" style="background: #7c3aed; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">
-                        📥 Export to CSV
-                    </button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table id="eventsContributionsTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <thead>
-                            <tr style="background: #f7fafc;">
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Care Unit</th>
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Event Name</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #fef3c7;">Total Events</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #fef3c7;">Total Students</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #d1fae5;">Enrolled Events</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #d1fae5;">Enrolled Students</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e2e8f0; background: #dbeafe;">% Enrolled</th>
-                            </tr>
-                        </thead>
-                        <tbody id="eventsContributionsBody">
+                        <tbody id="contributionsBody">
                             <!-- Rows will be dynamically inserted here -->
                         </tbody>
                     </table>
@@ -1648,11 +1613,9 @@
             buildSelfBookedTable();
             await yieldToMain();
             
-            buildLocationContributionsTable();
+            buildContributionsTable();
             await yieldToMain();
             updateProgress(96, 'Finalizing...');
-            
-            buildEventsContributionsTable();
         }
 
         function updateProgress(percentage, text) {
@@ -1996,8 +1959,7 @@
                 buildDetailedTable();
                 buildLoginsTable();
                 buildSelfBookedTable();
-                buildLocationContributionsTable();
-                buildEventsContributionsTable();
+                buildContributionsTable();
             } catch (error) {
                 console.error('Error building dashboard:', error);
                 showError('Error building dashboard: ' + error.message);
@@ -2095,7 +2057,7 @@
                 if (isAcademicDeptsAppointment(careUnit)) {
                     studentsWithAcademicDepts.add(studentId);
                 }
-                if (isTransferSupportAppointment(location)) {
+                if (isTransferSupportAppointment(careUnit, location)) {
                     studentsWithTransferSupport.add(studentId);
                 }
             });
@@ -2107,18 +2069,31 @@
                 studentsWithEvents.add(studentId);
 
                 const careUnit = event['Care Unit'] || '';
+                const location = event['Location'] || '';
 
-                // Check event categories (case-insensitive)
-                if (isAdvisingEvent(careUnit)) {
+                // Check event categories (same rules as appointments)
+                if (isAdvisingAppointment(careUnit, location)) {
                     studentsWithAdvising.add(studentId);
                 }
-                if (isCampusLifeEvent(careUnit)) {
+                if (isCareerAppointment(careUnit)) {
+                    studentsWithCareer.add(studentId);
+                }
+                if (isTutoringAppointment(careUnit, location)) {
+                    studentsWithTutoring.add(studentId);
+                }
+                if (isCampusLifeAppointment(careUnit, location)) {
                     studentsWithCampusLife.add(studentId);
                 }
-                if (isAcademicDeptsEvent(careUnit)) {
+                if (isEnrollmentAppointment(careUnit)) {
+                    studentsWithEnrollment.add(studentId);
+                }
+                if (isPayingForCollegeAppointment(careUnit)) {
+                    studentsWithPayingForCollege.add(studentId);
+                }
+                if (isAcademicDeptsAppointment(careUnit)) {
                     studentsWithAcademicDepts.add(studentId);
                 }
-                if (isTransferSupportEvent(careUnit)) {
+                if (isTransferSupportAppointment(careUnit, location)) {
                     studentsWithTransferSupport.add(studentId);
                 }
             });
@@ -2544,7 +2519,7 @@
                     if (isAcademicDeptsAppointment(careUnit)) {
                         monthlyData[monthKey]['Academic Depts & Library'].add(studentId);
                     }
-                    if (isTransferSupportAppointment(location)) {
+                    if (isTransferSupportAppointment(careUnit, location)) {
                         monthlyData[monthKey]['Transfer Support'].add(studentId);
                     }
                 });
@@ -2595,21 +2570,34 @@
 
                     const studentId = event['Student ID'];
                     const careUnit = event['Care Unit'] || '';
+                    const location = event['Location'] || '';
 
                     // Count for "Any"
                     monthlyData[monthKey].Any.add(studentId);
 
-                    // Count for specific types (events)
-                    if (isAdvisingEvent(careUnit)) {
+                    // Count for specific types (same rules as appointments)
+                    if (isAdvisingAppointment(careUnit, location)) {
                         monthlyData[monthKey].Advising.add(studentId);
                     }
-                    if (isCampusLifeEvent(careUnit)) {
+                    if (isCareerAppointment(careUnit)) {
+                        monthlyData[monthKey].Career.add(studentId);
+                    }
+                    if (isTutoringAppointment(careUnit, location)) {
+                        monthlyData[monthKey].Tutoring.add(studentId);
+                    }
+                    if (isCampusLifeAppointment(careUnit, location)) {
                         monthlyData[monthKey]['Campus Life'].add(studentId);
                     }
-                    if (isAcademicDeptsEvent(careUnit)) {
+                    if (isEnrollmentAppointment(careUnit)) {
+                        monthlyData[monthKey].Enrollment.add(studentId);
+                    }
+                    if (isPayingForCollegeAppointment(careUnit)) {
+                        monthlyData[monthKey]['Paying for College'].add(studentId);
+                    }
+                    if (isAcademicDeptsAppointment(careUnit)) {
                         monthlyData[monthKey]['Academic Depts & Library'].add(studentId);
                     }
-                    if (isTransferSupportEvent(careUnit)) {
+                    if (isTransferSupportAppointment(careUnit, location)) {
                         monthlyData[monthKey]['Transfer Support'].add(studentId);
                     }
                 });
@@ -2804,7 +2792,7 @@
                         studentsWithAcademicDepts.add(studentId);
                         grandStudentsWithAcademicDepts.add(studentId);
                     }
-                    if (isTransferSupportAppointment(location)) {
+                    if (isTransferSupportAppointment(careUnit, location)) {
                         studentsWithTransferSupport.add(studentId);
                         grandStudentsWithTransferSupport.add(studentId);
                     }
@@ -2817,20 +2805,37 @@
                     grandStudentsWithEngagement.add(studentId);
 
                     const careUnit = event['Care Unit'] || '';
+                    const location = event['Location'] || '';
 
-                    if (isAdvisingEvent(careUnit)) {
+                    if (isAdvisingAppointment(careUnit, location)) {
                         studentsWithAdvising.add(studentId);
                         grandStudentsWithAdvising.add(studentId);
                     }
-                    if (isCampusLifeEvent(careUnit)) {
+                    if (isCareerAppointment(careUnit)) {
+                        studentsWithCareer.add(studentId);
+                        grandStudentsWithCareer.add(studentId);
+                    }
+                    if (isTutoringAppointment(careUnit, location)) {
+                        studentsWithTutoring.add(studentId);
+                        grandStudentsWithTutoring.add(studentId);
+                    }
+                    if (isCampusLifeAppointment(careUnit, location)) {
                         studentsWithCampusLife.add(studentId);
                         grandStudentsWithCampusLife.add(studentId);
                     }
-                    if (isAcademicDeptsEvent(careUnit)) {
+                    if (isEnrollmentAppointment(careUnit)) {
+                        studentsWithEnrollment.add(studentId);
+                        grandStudentsWithEnrollment.add(studentId);
+                    }
+                    if (isPayingForCollegeAppointment(careUnit)) {
+                        studentsWithPayingForCollege.add(studentId);
+                        grandStudentsWithPayingForCollege.add(studentId);
+                    }
+                    if (isAcademicDeptsAppointment(careUnit)) {
                         studentsWithAcademicDepts.add(studentId);
                         grandStudentsWithAcademicDepts.add(studentId);
                     }
-                    if (isTransferSupportEvent(careUnit)) {
+                    if (isTransferSupportAppointment(careUnit, location)) {
                         studentsWithTransferSupport.add(studentId);
                         grandStudentsWithTransferSupport.add(studentId);
                     }
@@ -3103,9 +3108,9 @@
             tbody.appendChild(grandTotalRow);
         }
 
-        // Build Location Contributions Table (Grouped by Category)
-        function buildLocationContributionsTable() {
-            const tbody = document.getElementById('locationContributionsBody');
+        // Build Combined Contributions Table (Grouped by Category)
+        function buildContributionsTable() {
+            const tbody = document.getElementById('contributionsBody');
             tbody.innerHTML = '';
 
             // Get enrolled student IDs
@@ -3114,21 +3119,16 @@
                 enrolledStudentIds.add(s['Student ID']);
             });
 
-            // Build location data structure with ALL appointments (not just enrolled)
+            // Build location data structure for enrolled students only
             const locationData = {};
 
-            filteredAppointmentData.forEach(function(appointment) {
-                const location = appointment['Location'] || '(No Location)';
-                const careUnit = appointment['Care Unit'] || '';
-                const studentId = appointment['Student ID'];
-                const isEnrolled = enrolledStudentIds.has(studentId);
-
+            function ensureLocation(location) {
                 if (!locationData[location]) {
                     locationData[location] = {
-                        totalAppts: 0,
-                        totalStudents: new Set(),
-                        enrolledAppts: 0,
-                        enrolledStudents: new Set(),
+                        students: new Set(),
+                        appointments: 0,
+                        checkins: 0,
+                        events: 0,
                         categories: {
                             'Advising': new Set(),
                             'Career Services': new Set(),
@@ -3141,41 +3141,75 @@
                         }
                     };
                 }
+            }
 
-                locationData[location].totalAppts++;
-                locationData[location].totalStudents.add(studentId);
-
-                if (isEnrolled) {
-                    locationData[location].enrolledAppts++;
-                    locationData[location].enrolledStudents.add(studentId);
-
-                    // Track categories for enrolled students only
-                    if (isAdvisingAppointment(careUnit, location)) {
-                        locationData[location].categories['Advising'].add(studentId);
-                    }
-                    if (isCareerAppointment(careUnit)) {
-                        locationData[location].categories['Career Services'].add(studentId);
-                    }
-                    if (isTutoringAppointment(careUnit, location)) {
-                        locationData[location].categories['Tutoring'].add(studentId);
-                    }
-                    if (isCampusLifeAppointment(careUnit, location)) {
-                        locationData[location].categories['Campus Life'].add(studentId);
-                    }
-                    if (isEnrollmentAppointment(careUnit)) {
-                        locationData[location].categories['Enrollment'].add(studentId);
-                    }
-                    if (isPayingForCollegeAppointment(careUnit)) {
-                        locationData[location].categories['Paying for College'].add(studentId);
-                    }
-                    if (isAcademicDeptsAppointment(careUnit)) {
-                        locationData[location].categories['Academic Depts & Library'].add(studentId);
-                    }
-                    if (isTransferSupportAppointment(location)) {
-                        locationData[location].categories['Transfer Support'].add(studentId);
-                    }
+            function categorizeRecord(careUnit, location, studentId) {
+                if (isAdvisingAppointment(careUnit, location)) {
+                    locationData[location].categories['Advising'].add(studentId);
                 }
+                if (isCareerAppointment(careUnit)) {
+                    locationData[location].categories['Career Services'].add(studentId);
+                }
+                if (isTutoringAppointment(careUnit, location)) {
+                    locationData[location].categories['Tutoring'].add(studentId);
+                }
+                if (isCampusLifeAppointment(careUnit, location)) {
+                    locationData[location].categories['Campus Life'].add(studentId);
+                }
+                if (isEnrollmentAppointment(careUnit)) {
+                    locationData[location].categories['Enrollment'].add(studentId);
+                }
+                if (isPayingForCollegeAppointment(careUnit)) {
+                    locationData[location].categories['Paying for College'].add(studentId);
+                }
+                if (isAcademicDeptsAppointment(careUnit)) {
+                    locationData[location].categories['Academic Depts & Library'].add(studentId);
+                }
+                if (isTransferSupportAppointment(careUnit, location)) {
+                    locationData[location].categories['Transfer Support'].add(studentId);
+                }
+            }
+
+            // Process appointments (enrolled only)
+            filteredAppointmentData.forEach(function(appointment) {
+                const studentId = appointment['Student ID'];
+                if (!enrolledStudentIds.has(studentId)) return;
+
+                const location = appointment['Location'] || '(No Location)';
+                const careUnit = appointment['Care Unit'] || '';
+                const source = appointment['Source'] || '';
+
+                ensureLocation(location);
+                locationData[location].students.add(studentId);
+
+                if (source === 'Check-in') {
+                    locationData[location].checkins++;
+                } else {
+                    locationData[location].appointments++;
+                }
+
+                categorizeRecord(careUnit, location, studentId);
             });
+
+            // Process events (enrolled only, if not excluded by appointment filters)
+            if (!appointmentFiltersActive && hasEventsData) {
+                filteredEventData.forEach(function(event) {
+                    const studentId = event['Student ID'];
+                    if (!enrolledStudentIds.has(studentId)) return;
+
+                    const location = event['Location'] || '(No Location)';
+                    const careUnit = event['Care Unit'] || '';
+
+                    ensureLocation(location);
+                    locationData[location].students.add(studentId);
+                    locationData[location].events++;
+
+                    categorizeRecord(careUnit, location, studentId);
+                });
+            }
+
+            // Store for export
+            window.contributionsData = locationData;
 
             // Category colors and order
             const categoryConfig = [
@@ -3196,20 +3230,17 @@
                     const catData = locationData[location].categories[category.name];
                     if (catData && catData.size > 0) {
                         const data = locationData[location];
-                        const pctEnrolled = data.totalStudents.size > 0 ? 
-                            (data.enrolledStudents.size / data.totalStudents.size * 100).toFixed(1) : 0;
                         contributingLocations.push({
                             location: location,
-                            totalAppts: data.totalAppts,
-                            totalStudents: data.totalStudents.size,
-                            enrolledAppts: data.enrolledAppts,
-                            enrolledStudents: data.enrolledStudents.size,
-                            pctEnrolled: pctEnrolled
+                            students: data.students.size,
+                            appointments: data.appointments,
+                            checkins: data.checkins,
+                            events: data.events,
+                            total: data.appointments + data.checkins + data.events
                         });
                     }
                 });
 
-                // Sort alphabetically by location
                 contributingLocations.sort(function(a, b) {
                     return a.location.localeCompare(b.location);
                 });
@@ -3227,11 +3258,11 @@
                         row.innerHTML = 
                             '<td style="padding: 10px 12px 10px 30px; color: #718096;">↳</td>' +
                             '<td style="padding: 10px 12px; font-weight: 500;">' + loc.location + '</td>' +
-                            '<td style="padding: 10px 12px; text-align: center; background: #fffbeb;">' + loc.totalAppts.toLocaleString() + '</td>' +
-                            '<td style="padding: 10px 12px; text-align: center; background: #fffbeb;">' + loc.totalStudents.toLocaleString() + '</td>' +
-                            '<td style="padding: 10px 12px; text-align: center; background: #ecfdf5;">' + loc.enrolledAppts.toLocaleString() + '</td>' +
-                            '<td style="padding: 10px 12px; text-align: center; background: #ecfdf5; font-weight: 600; color: ' + category.color + ';">' + loc.enrolledStudents.toLocaleString() + '</td>' +
-                            '<td style="padding: 10px 12px; text-align: center; background: #eff6ff; font-weight: 600;">' + loc.pctEnrolled + '%</td>';
+                            '<td style="padding: 10px 12px; text-align: center; background: #eff6ff; font-weight: 600; color: ' + category.color + ';">' + loc.students.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px 12px; text-align: center; background: #ecfdf5;">' + loc.appointments.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px 12px; text-align: center; background: #fffbeb;">' + loc.checkins.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px 12px; text-align: center; background: #faf5ff;">' + loc.events.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px 12px; text-align: center; background: #f0f9ff; font-weight: 600;">' + loc.total.toLocaleString() + '</td>';
                         tbody.appendChild(row);
                     });
                 }
@@ -3245,29 +3276,26 @@
                 Object.keys(data.categories).forEach(function(cat) {
                     if (data.categories[cat].size > 0) hasCategory = true;
                 });
-                if (!hasCategory && data.totalAppts > 0) {
-                    const pctEnrolled = data.totalStudents.size > 0 ? 
-                        (data.enrolledStudents.size / data.totalStudents.size * 100).toFixed(1) : 0;
+                const total = data.appointments + data.checkins + data.events;
+                if (!hasCategory && total > 0) {
                     uncategorizedLocations.push({
                         location: location,
-                        totalAppts: data.totalAppts,
-                        totalStudents: data.totalStudents.size,
-                        enrolledAppts: data.enrolledAppts,
-                        enrolledStudents: data.enrolledStudents.size,
-                        pctEnrolled: pctEnrolled
+                        students: data.students.size,
+                        appointments: data.appointments,
+                        checkins: data.checkins,
+                        events: data.events,
+                        total: total
                     });
                 }
             });
 
             if (uncategorizedLocations.length > 0) {
-                uncategorizedLocations.sort(function(a, b) {
-                    return a.location.localeCompare(b.location);
-                });
-
+                uncategorizedLocations.sort(function(a, b) { return b.total - a.total; });
+                
                 const headerRow = document.createElement('tr');
                 headerRow.innerHTML = 
-                    '<td colspan="7" style="padding: 15px 12px; background: #f3f4f6; font-weight: 700; color: #6b7280; font-size: 15px; border-top: 2px solid #9ca3af;">' +
-                    'Uncategorized (Any Only) <span style="font-weight: normal; font-size: 13px;">(' + uncategorizedLocations.length + ' location' + (uncategorizedLocations.length !== 1 ? 's' : '') + ')</span></td>';
+                    '<td colspan="7" style="padding: 15px 12px; background: #fff1f2; font-weight: 700; color: #9f1239; font-size: 15px; border-top: 2px solid #9f1239;">' +
+                    'Uncategorized <span style="font-weight: normal; font-size: 13px;">(' + uncategorizedLocations.length + ' location' + (uncategorizedLocations.length !== 1 ? 's' : '') + ')</span></td>';
                 tbody.appendChild(headerRow);
 
                 uncategorizedLocations.forEach(function(loc) {
@@ -3276,31 +3304,48 @@
                     row.innerHTML = 
                         '<td style="padding: 10px 12px 10px 30px; color: #718096;">↳</td>' +
                         '<td style="padding: 10px 12px; font-weight: 500;">' + loc.location + '</td>' +
-                        '<td style="padding: 10px 12px; text-align: center; background: #fffbeb;">' + loc.totalAppts.toLocaleString() + '</td>' +
-                        '<td style="padding: 10px 12px; text-align: center; background: #fffbeb;">' + loc.totalStudents.toLocaleString() + '</td>' +
-                        '<td style="padding: 10px 12px; text-align: center; background: #ecfdf5;">' + loc.enrolledAppts.toLocaleString() + '</td>' +
-                        '<td style="padding: 10px 12px; text-align: center; background: #ecfdf5; font-weight: 600; color: #6b7280;">' + loc.enrolledStudents.toLocaleString() + '</td>' +
-                        '<td style="padding: 10px 12px; text-align: center; background: #eff6ff; font-weight: 600;">' + loc.pctEnrolled + '%</td>';
+                        '<td style="padding: 10px 12px; text-align: center; background: #eff6ff; font-weight: 600; color: #9f1239;">' + loc.students.toLocaleString() + '</td>' +
+                        '<td style="padding: 10px 12px; text-align: center; background: #ecfdf5;">' + loc.appointments.toLocaleString() + '</td>' +
+                        '<td style="padding: 10px 12px; text-align: center; background: #fffbeb;">' + loc.checkins.toLocaleString() + '</td>' +
+                        '<td style="padding: 10px 12px; text-align: center; background: #faf5ff;">' + loc.events.toLocaleString() + '</td>' +
+                        '<td style="padding: 10px 12px; text-align: center; background: #f0f9ff; font-weight: 600;">' + loc.total.toLocaleString() + '</td>';
                     tbody.appendChild(row);
                 });
             }
 
-            // Store data for export
-            window.locationContributionsData = locationData;
-            
-            // Show the section
-            document.getElementById('locationContributionsSection').style.display = 'block';
+            // Grand total row
+            var grandStudents = new Set();
+            var grandAppointments = 0, grandCheckins = 0, grandEvents = 0;
+            Object.keys(locationData).forEach(function(location) {
+                var data = locationData[location];
+                data.students.forEach(function(sid) { grandStudents.add(sid); });
+                grandAppointments += data.appointments;
+                grandCheckins += data.checkins;
+                grandEvents += data.events;
+            });
+            var grandTotal = grandAppointments + grandCheckins + grandEvents;
+
+            var grandRow = document.createElement('tr');
+            grandRow.style.fontWeight = 'bold';
+            grandRow.style.backgroundColor = '#f0f9ff';
+            grandRow.innerHTML = 
+                '<td style="padding: 12px; border-top: 2px solid #2d3748;" colspan="2">Grand Total</td>' +
+                '<td style="padding: 12px; text-align: center; border-top: 2px solid #2d3748; background: #dbeafe;">' + grandStudents.size.toLocaleString() + '</td>' +
+                '<td style="padding: 12px; text-align: center; border-top: 2px solid #2d3748; background: #d1fae5;">' + grandAppointments.toLocaleString() + '</td>' +
+                '<td style="padding: 12px; text-align: center; border-top: 2px solid #2d3748; background: #fef3c7;">' + grandCheckins.toLocaleString() + '</td>' +
+                '<td style="padding: 12px; text-align: center; border-top: 2px solid #2d3748; background: #e9d5ff;">' + grandEvents.toLocaleString() + '</td>' +
+                '<td style="padding: 12px; text-align: center; border-top: 2px solid #2d3748; background: #dbeafe;">' + grandTotal.toLocaleString() + '</td>';
+            tbody.appendChild(grandRow);
         }
 
-        // Export Location Contributions to CSV (grouped by category)
-        function exportLocationContributions() {
-            if (!window.locationContributionsData) {
+        function exportContributions() {
+            if (!window.contributionsData) {
                 alert('No data to export. Please process files first.');
                 return;
             }
 
-            const locationData = window.locationContributionsData;
-            const rows = [['Category', 'Location', 'Total Appts', 'Unique Students', 'Enrolled Appts', 'Unique Enrolled Students', '% Appts w/ Enrolled']];
+            const locationData = window.contributionsData;
+            const rows = [['Category', 'Location', 'Unique Students', 'Appointments', 'Check-ins', 'Events', 'Total']];
 
             const categoryOrder = ['Advising', 'Career Services', 'Tutoring', 'Campus Life', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
 
@@ -3310,15 +3355,13 @@
                     const catData = locationData[location].categories[category];
                     if (catData && catData.size > 0) {
                         const data = locationData[location];
-                        const pctEnrolled = data.totalStudents.size > 0 ? 
-                            (data.enrolledStudents.size / data.totalStudents.size * 100).toFixed(1) : 0;
                         contributingLocations.push({
                             location: location,
-                            totalAppts: data.totalAppts,
-                            totalStudents: data.totalStudents.size,
-                            enrolledAppts: data.enrolledAppts,
-                            enrolledStudents: data.enrolledStudents.size,
-                            pctEnrolled: pctEnrolled
+                            students: data.students.size,
+                            appointments: data.appointments,
+                            checkins: data.checkins,
+                            events: data.events,
+                            total: data.appointments + data.checkins + data.events
                         });
                     }
                 });
@@ -3328,7 +3371,7 @@
                 });
 
                 contributingLocations.forEach(function(loc) {
-                    rows.push([category, loc.location, loc.totalAppts, loc.totalStudents, loc.enrolledAppts, loc.enrolledStudents, loc.pctEnrolled + '%']);
+                    rows.push([category, loc.location, loc.students, loc.appointments, loc.checkins, loc.events, loc.total]);
                 });
             });
 
@@ -3339,14 +3382,12 @@
                 Object.keys(data.categories).forEach(function(cat) {
                     if (data.categories[cat].size > 0) hasCategory = true;
                 });
-                if (!hasCategory && data.totalAppts > 0) {
-                    const pctEnrolled = data.totalStudents.size > 0 ? 
-                        (data.enrolledStudents.size / data.totalStudents.size * 100).toFixed(1) : 0;
-                    rows.push(['Uncategorized (Any Only)', location, data.totalAppts, data.totalStudents.size, data.enrolledAppts, data.enrolledStudents.size, pctEnrolled + '%']);
+                const total = data.appointments + data.checkins + data.events;
+                if (!hasCategory && total > 0) {
+                    rows.push(['Uncategorized', location, data.students.size, data.appointments, data.checkins, data.events, total]);
                 }
             });
 
-            // Convert to CSV
             let csvContent = rows.map(function(row) {
                 return row.map(function(cell) {
                     if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
@@ -3356,185 +3397,19 @@
                 }).join(',');
             }).join('\n');
 
-            // Create download
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', 'location_contributions_by_category_' + new Date().toISOString().split('T')[0] + '.csv');
+            link.setAttribute('download', 'contributions_by_category_' + new Date().toISOString().split('T')[0] + '.csv');
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        // Build Events Contributions Table
-        function buildEventsContributionsTable() {
-            if (!hasEventsData) {
-                document.getElementById('eventsContributionsSection').style.display = 'none';
-                return;
-            }
-
-            const tbody = document.getElementById('eventsContributionsBody');
-            tbody.innerHTML = '';
-
-            // Get enrolled student IDs
-            const enrolledStudentIds = new Set();
-            filteredStudentData.forEach(function(s) {
-                enrolledStudentIds.add(s['Student ID']);
-            });
-
-            // Check if appointment filters are active
-            if (appointmentFiltersActive) {
-                document.getElementById('eventsContributionsSection').style.display = 'none';
-                return;
-            }
-
-            // Build event data structure - process ALL events (not just enrolled)
-            const eventData = {};
-
-            filteredEventData.forEach(function(event) {
-                const careUnit = event['Care Unit'] || '(No Care Unit)';
-                const eventName = event['Event Name'] || event['Name'] || '(No Event Name)';
-                const studentId = event['Student ID'];
-                const isEnrolled = enrolledStudentIds.has(studentId);
-                const key = careUnit + '|||' + eventName;
-
-                if (!eventData[key]) {
-                    eventData[key] = {
-                        careUnit: careUnit,
-                        eventName: eventName,
-                        totalEvents: 0,
-                        totalStudents: new Set(),
-                        enrolledEvents: 0,
-                        enrolledStudents: new Set()
-                    };
-                }
-
-                eventData[key].totalEvents++;
-                eventData[key].totalStudents.add(studentId);
-
-                if (isEnrolled) {
-                    eventData[key].enrolledEvents++;
-                    eventData[key].enrolledStudents.add(studentId);
-                }
-            });
-
-            if (Object.keys(eventData).length === 0) {
-                document.getElementById('eventsContributionsSection').style.display = 'none';
-                return;
-            }
-
-            // Sort by Care Unit then Event Name
-            const sortedKeys = Object.keys(eventData).sort(function(a, b) {
-                const aData = eventData[a];
-                const bData = eventData[b];
-                const careUnitCompare = aData.careUnit.localeCompare(bData.careUnit);
-                if (careUnitCompare !== 0) return careUnitCompare;
-                return aData.eventName.localeCompare(bData.eventName);
-            });
-
-            // Track current care unit for grouping
-            let currentCareUnit = null;
-
-            // Create rows
-            sortedKeys.forEach(function(key) {
-                const data = eventData[key];
-                const pctEnrolled = data.totalStudents.size > 0 ? 
-                    (data.enrolledStudents.size / data.totalStudents.size * 100).toFixed(1) : 0;
-                
-                // Add care unit header if changed
-                if (data.careUnit !== currentCareUnit) {
-                    currentCareUnit = data.careUnit;
-                    const headerRow = document.createElement('tr');
-                    headerRow.innerHTML = 
-                        '<td colspan="7" style="padding: 12px; background: #f3e8ff; font-weight: 700; color: #7c3aed; border-top: 2px solid #7c3aed;">' +
-                        data.careUnit + '</td>';
-                    tbody.appendChild(headerRow);
-                }
-
-                const row = document.createElement('tr');
-                row.style.borderBottom = '1px solid #e2e8f0';
-
-                row.innerHTML = 
-                    '<td style="padding: 10px 12px 10px 30px; color: #718096;">↳</td>' +
-                    '<td style="padding: 10px 12px; font-weight: 500;">' + data.eventName + '</td>' +
-                    '<td style="padding: 10px; text-align: center; background: #fffbeb;">' + data.totalEvents.toLocaleString() + '</td>' +
-                    '<td style="padding: 10px; text-align: center; background: #fffbeb;">' + data.totalStudents.size.toLocaleString() + '</td>' +
-                    '<td style="padding: 10px; text-align: center; background: #ecfdf5;">' + data.enrolledEvents.toLocaleString() + '</td>' +
-                    '<td style="padding: 10px; text-align: center; background: #ecfdf5; font-weight: 600; color: #7c3aed;">' + data.enrolledStudents.size.toLocaleString() + '</td>' +
-                    '<td style="padding: 10px; text-align: center; background: #eff6ff; font-weight: 600;">' + pctEnrolled + '%</td>';
-                
-                tbody.appendChild(row);
-            });
-
-            // Store data for export
-            window.eventsContributionsData = eventData;
-            
-            // Show the section
-            document.getElementById('eventsContributionsSection').style.display = 'block';
-        }
-
-        // Export Events Contributions to CSV
-        function exportEventsContributions() {
-            if (!window.eventsContributionsData) {
-                alert('No data to export. Please process files first.');
-                return;
-            }
-
-            const eventData = window.eventsContributionsData;
-            const rows = [['Care Unit', 'Event Name', 'Total Events', 'Total Students', 'Enrolled Events', 'Enrolled Students', '% Enrolled']];
-
-            // Sort by Care Unit then Event Name
-            const sortedKeys = Object.keys(eventData).sort(function(a, b) {
-                const aData = eventData[a];
-                const bData = eventData[b];
-                const careUnitCompare = aData.careUnit.localeCompare(bData.careUnit);
-                if (careUnitCompare !== 0) return careUnitCompare;
-                return aData.eventName.localeCompare(bData.eventName);
-            });
-
-            sortedKeys.forEach(function(key) {
-                const data = eventData[key];
-                const pctEnrolled = data.totalStudents.size > 0 ? 
-                    (data.enrolledStudents.size / data.totalStudents.size * 100).toFixed(1) : 0;
-                rows.push([
-                    data.careUnit,
-                    data.eventName,
-                    data.totalEvents,
-                    data.totalStudents.size,
-                    data.enrolledEvents,
-                    data.enrolledStudents.size,
-                    pctEnrolled + '%'
-                ]);
-            });
-
-            // Convert to CSV
-            let csvContent = rows.map(function(row) {
-                return row.map(function(cell) {
-                    if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
-                        return '"' + cell.replace(/"/g, '""') + '"';
-                    }
-                    return cell;
-                }).join(',');
-            }).join('\n');
-
-            // Create download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'events_contributions_' + new Date().toISOString().split('T')[0] + '.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Make export functions available globally
-        window.exportLocationContributions = exportLocationContributions;
-        window.exportEventsContributions = exportEventsContributions;
-
+        // Make export function available globally
+        window.exportContributions = exportContributions;
         // Appointment type checking functions
         function isAdvisingAppointment(careUnit, location) {
             const advisingLocations = [
@@ -3598,30 +3473,8 @@
                    careUnit === 'Physical Therapist Assistant Program';
         }
 
-        function isTransferSupportAppointment(location) {
-            return location === 'Transfer Support';
-        }
-
-        // Event type checking functions (case-insensitive)
-        function isAdvisingEvent(careUnit) {
-            const lowerCareUnit = (careUnit || '').toLowerCase().trim();
-            return lowerCareUnit === 'advising';
-        }
-
-        function isCampusLifeEvent(careUnit) {
-            const lowerCareUnit = (careUnit || '').toLowerCase().trim();
-            return lowerCareUnit === 'campus life';
-        }
-
-        function isAcademicDeptsEvent(careUnit) {
-            const lowerCareUnit = (careUnit || '').toLowerCase().trim();
-            return lowerCareUnit === 'academic departments & library' ||
-                   lowerCareUnit === 'physical therapist assistant program';
-        }
-
-        function isTransferSupportEvent(careUnit) {
-            const lowerCareUnit = (careUnit || '').toLowerCase().trim();
-            return lowerCareUnit === 'transfer' || lowerCareUnit === 'transfer support (tei)';
+        function isTransferSupportAppointment(careUnit, location) {
+            return careUnit === 'Transfer' && location === 'Transfer Engagement Initiative (TEI)';
         }
 
         // Export Enhanced Student Data Function
@@ -3693,7 +3546,7 @@
                         if (isAcademicDeptsAppointment(careUnit)) {
                             studentEngagementMap[studentId].academicDepts = true;
                         }
-                        if (isTransferSupportAppointment(location)) {
+                        if (isTransferSupportAppointment(careUnit, location)) {
                             studentEngagementMap[studentId].transferSupport = true;
                         }
                     }
@@ -3706,17 +3559,30 @@
                         studentEngagementMap[studentId].any = true;
 
                         const careUnit = event['Care Unit'] || '';
+                        const location = event['Location'] || '';
 
-                        if (isAdvisingEvent(careUnit)) {
+                        if (isAdvisingAppointment(careUnit, location)) {
                             studentEngagementMap[studentId].advising = true;
                         }
-                        if (isCampusLifeEvent(careUnit)) {
+                        if (isCareerAppointment(careUnit)) {
+                            studentEngagementMap[studentId].career = true;
+                        }
+                        if (isTutoringAppointment(careUnit, location)) {
+                            studentEngagementMap[studentId].tutoring = true;
+                        }
+                        if (isCampusLifeAppointment(careUnit, location)) {
                             studentEngagementMap[studentId].campusLife = true;
                         }
-                        if (isAcademicDeptsEvent(careUnit)) {
+                        if (isEnrollmentAppointment(careUnit)) {
+                            studentEngagementMap[studentId].enrollment = true;
+                        }
+                        if (isPayingForCollegeAppointment(careUnit)) {
+                            studentEngagementMap[studentId].payingForCollege = true;
+                        }
+                        if (isAcademicDeptsAppointment(careUnit)) {
                             studentEngagementMap[studentId].academicDepts = true;
                         }
-                        if (isTransferSupportEvent(careUnit)) {
+                        if (isTransferSupportAppointment(careUnit, location)) {
                             studentEngagementMap[studentId].transferSupport = true;
                         }
                     }
@@ -3853,7 +3719,7 @@
                     if (isEnrollmentAppointment(careUnit)) studentsWithEnrollment.add(studentId);
                     if (isPayingForCollegeAppointment(careUnit)) studentsWithPayingForCollege.add(studentId);
                     if (isAcademicDeptsAppointment(careUnit)) studentsWithAcademicDepts.add(studentId);
-                    if (isTransferSupportAppointment(location)) studentsWithTransferSupport.add(studentId);
+                    if (isTransferSupportAppointment(careUnit, location)) studentsWithTransferSupport.add(studentId);
                 });
 
                 enrolledEvents.forEach(function(event) {
@@ -3861,11 +3727,16 @@
                     studentsWithEngagement.add(studentId);
                     studentsWithEvents.add(studentId);
                     const careUnit = event['Care Unit'] || '';
+                    const location = event['Location'] || '';
 
-                    if (isAdvisingEvent(careUnit)) studentsWithAdvising.add(studentId);
-                    if (isCampusLifeEvent(careUnit)) studentsWithCampusLife.add(studentId);
-                    if (isAcademicDeptsEvent(careUnit)) studentsWithAcademicDepts.add(studentId);
-                    if (isTransferSupportEvent(careUnit)) studentsWithTransferSupport.add(studentId);
+                    if (isAdvisingAppointment(careUnit, location)) studentsWithAdvising.add(studentId);
+                    if (isCareerAppointment(careUnit)) studentsWithCareer.add(studentId);
+                    if (isTutoringAppointment(careUnit, location)) studentsWithTutoring.add(studentId);
+                    if (isCampusLifeAppointment(careUnit, location)) studentsWithCampusLife.add(studentId);
+                    if (isEnrollmentAppointment(careUnit)) studentsWithEnrollment.add(studentId);
+                    if (isPayingForCollegeAppointment(careUnit)) studentsWithPayingForCollege.add(studentId);
+                    if (isAcademicDeptsAppointment(careUnit)) studentsWithAcademicDepts.add(studentId);
+                    if (isTransferSupportAppointment(careUnit, location)) studentsWithTransferSupport.add(studentId);
                 });
 
                 const overallEnrollmentPct = allStudentsInData.size > 0 ? 
@@ -3986,17 +3857,22 @@
                            isEnrollmentAppointment(careUnit) ||
                            isPayingForCollegeAppointment(careUnit) ||
                            isAcademicDeptsAppointment(careUnit) ||
-                           isTransferSupportAppointment(location);
+                           isTransferSupportAppointment(careUnit, location);
                 }
 
                 // Check if an event matches ANY category
                 function isEventCategorized(event) {
                     const careUnit = event['Care Unit'] || '';
+                    const location = event['Location'] || '';
                     
-                    return isAdvisingEvent(careUnit) ||
-                           isCampusLifeEvent(careUnit) ||
-                           isAcademicDeptsEvent(careUnit) ||
-                           isTransferSupportEvent(careUnit);
+                    return isAdvisingAppointment(careUnit, location) ||
+                           isCareerAppointment(careUnit) ||
+                           isTutoringAppointment(careUnit, location) ||
+                           isCampusLifeAppointment(careUnit, location) ||
+                           isEnrollmentAppointment(careUnit) ||
+                           isPayingForCollegeAppointment(careUnit) ||
+                           isAcademicDeptsAppointment(careUnit) ||
+                           isTransferSupportAppointment(careUnit, location);
                 }
 
                 // Find truly uncategorized appointments
@@ -4176,7 +4052,7 @@
                 content += '<li><strong>Enrollment:</strong> Care Unit = "Enrollment"</li>';
                 content += '<li><strong>Paying for College:</strong> Care Unit = "Paying for College"</li>';
                 content += '<li><strong>Academic Depts & Library:</strong> Care Unit = "Academic Departments & Library"</li>';
-                content += '<li><strong>Transfer Support:</strong> Location = "Transfer Support" OR Event Care Unit = "Transfer" OR "Transfer Support (TEI)"</li>';
+                content += '<li><strong>Transfer Support:</strong> Care Unit = "Transfer" AND Location = "Transfer Engagement Initiative (TEI)"</li>';
                 content += '</ul>';
                 content += '</div>';
                 
