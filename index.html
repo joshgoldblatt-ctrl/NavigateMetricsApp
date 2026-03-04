@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 4.5</title>
+    <title>Navigate Student Engagement Metrics App - Version 4.8</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -640,8 +640,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V4.5</h1>
-            <div class="subtitle">Version 4.5 - Released March 3, 2026</div>
+            <h1>📚 Navigate Student Engagement Metrics App_V4.8</h1>
+            <div class="subtitle">Version 4.8 - Released March 4, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
         </header>
 
@@ -1053,6 +1053,38 @@
                         <!-- Score Cards -->
             <div class="score-cards" id="scoreCards">
                 <!-- Cards will be dynamically inserted here -->
+            </div>
+
+            <!-- Meeting Frequency Distribution Table -->
+            <div class="table-container" style="margin-top: 30px;">
+                <h3>📊 Meeting Frequency Distribution by Category</h3>
+                <p style="color: #718096; margin-bottom: 15px; font-size: 14px;">
+                    Number of enrolled students by meeting count within each engagement category (appointments, check-ins, and events combined).
+                </p>
+                <div style="margin-bottom: 15px;">
+                    <button class="export-btn" onclick="exportMeetingFrequency()" style="background: #0891b2; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                        📥 Export to CSV
+                    </button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="meetingFrequencyTable" style="min-width: 900px;">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>0</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                                <th>5</th>
+                                <th>6+</th>
+                            </tr>
+                        </thead>
+                        <tbody id="meetingFrequencyBody">
+                            <!-- Rows will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Charts Grid -->
@@ -1598,6 +1630,9 @@
         async function buildDashboardAsync() {
             buildScoreCards();
             await yieldToMain();
+            
+            buildMeetingFrequencyTable();
+            await yieldToMain();
             updateProgress(88, 'Building charts...');
             
             buildCharts();
@@ -1955,6 +1990,7 @@
                 }
 
                 buildScoreCards();
+                buildMeetingFrequencyTable();
                 buildCharts();
                 buildDetailedTable();
                 buildLoginsTable();
@@ -2174,7 +2210,272 @@
                     '<div class="score-card-subtitle">of total students</div>';
                 container.appendChild(eventsOnlyCard);
             }
+
+            // Meeting frequency cards (Average and Median)
+            // Count meetings per enrolled student (appointments + check-ins + events)
+            const meetingCounts = {};
+            filteredStudentData.forEach(function(s) {
+                meetingCounts[s['Student ID']] = 0;
+            });
+
+            // Count appointments/check-ins
+            const enrolledIdsForMeetings = new Set(Object.keys(meetingCounts));
+            filteredAppointmentData.forEach(function(a) {
+                const sid = a['Student ID'];
+                if (enrolledIdsForMeetings.has(sid)) {
+                    meetingCounts[sid]++;
+                }
+            });
+
+            // Count events (if not excluded by appointment filters)
+            if (!appointmentFiltersActive && hasEventsData) {
+                filteredEventData.forEach(function(e) {
+                    const sid = e['Student ID'];
+                    if (enrolledIdsForMeetings.has(sid)) {
+                        meetingCounts[sid]++;
+                    }
+                });
+            }
+
+            // Get all counts as array
+            const allCounts = Object.values(meetingCounts);
+            const engagedCounts = allCounts.filter(function(c) { return c > 0; });
+
+            // Calculate averages
+            var totalMeetings = allCounts.reduce(function(sum, c) { return sum + c; }, 0);
+            var avgAll = totalStudents > 0 ? (totalMeetings / totalStudents).toFixed(1) : 0;
+            var avgEngaged = engagedCounts.length > 0 ? (totalMeetings / engagedCounts.length).toFixed(1) : 0;
+
+            // Calculate medians
+            function getMedian(arr) {
+                if (arr.length === 0) return 0;
+                var sorted = arr.slice().sort(function(a, b) { return a - b; });
+                var mid = Math.floor(sorted.length / 2);
+                if (sorted.length % 2 === 0) {
+                    return ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(1);
+                }
+                return sorted[mid].toFixed(1);
+            }
+
+            var medianAll = getMedian(allCounts);
+            var medianEngaged = getMedian(engagedCounts);
+
+            // Add separator
+            const meetingSeparator = document.createElement('div');
+            meetingSeparator.style.cssText = 'grid-column: 1 / -1; border-top: 2px dashed #cbd5e0; margin: 10px 0; padding-top: 10px;';
+            meetingSeparator.innerHTML = '<span style="background: #f5f7fa; padding: 0 10px; position: relative; top: -20px; color: #718096; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Meeting Frequency (All Enrolled Students)</span>';
+            container.appendChild(meetingSeparator);
+
+            // Average - all enrolled
+            var avgAllCard = document.createElement('div');
+            avgAllCard.className = 'score-card';
+            avgAllCard.style.borderLeft = '4px solid #0891b2';
+            avgAllCard.innerHTML = 
+                '<div class="score-card-title">📈 Avg Meetings per Student</div>' +
+                '<div class="score-card-value" style="color: #0891b2;">' + avgAll + '</div>' +
+                '<div class="score-card-subtitle">' + totalMeetings.toLocaleString() + ' meetings / ' + totalStudents.toLocaleString() + ' students</div>';
+            container.appendChild(avgAllCard);
+
+            // Median - all enrolled
+            var medAllCard = document.createElement('div');
+            medAllCard.className = 'score-card';
+            medAllCard.style.borderLeft = '4px solid #0891b2';
+            medAllCard.innerHTML = 
+                '<div class="score-card-title">📊 Median Meetings per Student</div>' +
+                '<div class="score-card-value" style="color: #0891b2;">' + medianAll + '</div>' +
+                '<div class="score-card-subtitle">across all ' + totalStudents.toLocaleString() + ' enrolled students</div>';
+            container.appendChild(medAllCard);
+
+            // Separator for engaged only
+            const engagedSeparator = document.createElement('div');
+            engagedSeparator.style.cssText = 'grid-column: 1 / -1; border-top: 2px dashed #cbd5e0; margin: 10px 0; padding-top: 10px;';
+            engagedSeparator.innerHTML = '<span style="background: #f5f7fa; padding: 0 10px; position: relative; top: -20px; color: #718096; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Meeting Frequency (Engaged Students Only)</span>';
+            container.appendChild(engagedSeparator);
+
+            // Average - engaged only
+            var avgEngagedCard = document.createElement('div');
+            avgEngagedCard.className = 'score-card';
+            avgEngagedCard.style.borderLeft = '4px solid #7c3aed';
+            avgEngagedCard.innerHTML = 
+                '<div class="score-card-title">📈 Avg Meetings per Engaged Student</div>' +
+                '<div class="score-card-value" style="color: #7c3aed;">' + avgEngaged + '</div>' +
+                '<div class="score-card-subtitle">' + totalMeetings.toLocaleString() + ' meetings / ' + engagedCounts.length.toLocaleString() + ' engaged students</div>';
+            container.appendChild(avgEngagedCard);
+
+            // Median - engaged only
+            var medEngagedCard = document.createElement('div');
+            medEngagedCard.className = 'score-card';
+            medEngagedCard.style.borderLeft = '4px solid #7c3aed';
+            medEngagedCard.innerHTML = 
+                '<div class="score-card-title">📊 Median Meetings per Engaged Student</div>' +
+                '<div class="score-card-value" style="color: #7c3aed;">' + medianEngaged + '</div>' +
+                '<div class="score-card-subtitle">across ' + engagedCounts.length.toLocaleString() + ' students with 1+ meeting</div>';
+            container.appendChild(medEngagedCard);
         }
+
+        function buildMeetingFrequencyTable() {
+            const tbody = document.getElementById('meetingFrequencyBody');
+            tbody.innerHTML = '';
+
+            const totalStudents = filteredStudentData.length;
+
+            // Initialize per-student counts for each category
+            const categories = [
+                { name: 'Any', check: function() { return true; } },
+                { name: 'Advising', check: function(cu, loc) { return isAdvisingAppointment(cu, loc); } },
+                { name: 'Career Services', check: function(cu) { return isCareerAppointment(cu); } },
+                { name: 'Tutoring', check: function(cu, loc) { return isTutoringAppointment(cu, loc); } },
+                { name: 'Campus Life', check: function(cu, loc) { return isCampusLifeAppointment(cu, loc); } },
+                { name: 'Enrollment', check: function(cu) { return isEnrollmentAppointment(cu); } },
+                { name: 'Paying for College', check: function(cu) { return isPayingForCollegeAppointment(cu); } },
+                { name: 'Academic Depts & Library', check: function(cu) { return isAcademicDeptsAppointment(cu); } },
+                { name: 'Transfer Support', check: function(cu, loc) { return isTransferSupportAppointment(cu, loc); } }
+            ];
+
+            // Initialize counts: { studentId: { 'Any': 0, 'Advising': 0, ... } }
+            var studentCategoryCounts = {};
+            filteredStudentData.forEach(function(s) {
+                var sid = s['Student ID'];
+                studentCategoryCounts[sid] = {};
+                categories.forEach(function(cat) {
+                    studentCategoryCounts[sid][cat.name] = 0;
+                });
+            });
+
+            var enrolledIds = new Set(Object.keys(studentCategoryCounts));
+
+            // Count appointments
+            filteredAppointmentData.forEach(function(a) {
+                var sid = a['Student ID'];
+                if (!enrolledIds.has(sid)) return;
+                var cu = a['Care Unit'] || '';
+                var loc = a['Location'] || '';
+
+                // Any always counts
+                studentCategoryCounts[sid]['Any']++;
+
+                // Check each specific category
+                for (var i = 1; i < categories.length; i++) {
+                    if (categories[i].check(cu, loc)) {
+                        studentCategoryCounts[sid][categories[i].name]++;
+                    }
+                }
+            });
+
+            // Count events
+            if (!appointmentFiltersActive && hasEventsData) {
+                filteredEventData.forEach(function(e) {
+                    var sid = e['Student ID'];
+                    if (!enrolledIds.has(sid)) return;
+                    var cu = e['Care Unit'] || '';
+                    var loc = e['Location'] || '';
+
+                    studentCategoryCounts[sid]['Any']++;
+
+                    for (var i = 1; i < categories.length; i++) {
+                        if (categories[i].check(cu, loc)) {
+                            studentCategoryCounts[sid][categories[i].name]++;
+                        }
+                    }
+                });
+            }
+
+            // Build frequency buckets for each category
+            var bucketDefs = [
+                { label: '0', min: 0, max: 0 },
+                { label: '1', min: 1, max: 1 },
+                { label: '2', min: 2, max: 2 },
+                { label: '3', min: 3, max: 3 },
+                { label: '4', min: 4, max: 4 },
+                { label: '5', min: 5, max: 5 },
+                { label: '6+', min: 6, max: Infinity }
+            ];
+
+            // Store for export: { categoryName: [bucket0count, bucket1count, ...] }
+            window.meetingFrequencyData = {};
+
+            categories.forEach(function(cat) {
+                var bucketCounts = bucketDefs.map(function() { return 0; });
+
+                Object.keys(studentCategoryCounts).forEach(function(sid) {
+                    var count = studentCategoryCounts[sid][cat.name];
+                    for (var i = 0; i < bucketDefs.length; i++) {
+                        if (count >= bucketDefs[i].min && count <= bucketDefs[i].max) {
+                            bucketCounts[i]++;
+                            break;
+                        }
+                    }
+                });
+
+                window.meetingFrequencyData[cat.name] = bucketCounts;
+
+                var row = document.createElement('tr');
+                if (cat.name === 'Any') {
+                    row.style.fontWeight = 'bold';
+                    row.style.backgroundColor = '#f0f9ff';
+                }
+                var html = '<td>' + cat.name + '</td>';
+                bucketCounts.forEach(function(cnt) {
+                    var pct = totalStudents > 0 ? (cnt / totalStudents * 100).toFixed(1) : 0;
+                    html += '<td><span class="number-cell">' + cnt.toLocaleString() + '</span> <span class="percentage-cell">(' + pct + '%)</span></td>';
+                });
+                row.innerHTML = html;
+                tbody.appendChild(row);
+            });
+        }
+
+        function exportMeetingFrequency() {
+            if (!window.meetingFrequencyData) {
+                alert('No data to export. Please process files first.');
+                return;
+            }
+
+            var totalStudents = filteredStudentData.length;
+            var bucketLabels = ['0', '1', '2', '3', '4', '5', '6+'];
+
+            // Build header row with separate count/pct columns
+            var header = ['Category'];
+            bucketLabels.forEach(function(label) {
+                header.push(label + ' (#)');
+                header.push(label + ' (%)');
+            });
+            var rows = [header];
+
+            var categoryOrder = ['Any', 'Advising', 'Career Services', 'Tutoring', 'Campus Life', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
+
+            categoryOrder.forEach(function(catName) {
+                var bucketCounts = window.meetingFrequencyData[catName];
+                if (!bucketCounts) return;
+                var row = [catName];
+                bucketCounts.forEach(function(cnt) {
+                    var pct = totalStudents > 0 ? (cnt / totalStudents * 100).toFixed(1) : '0.0';
+                    row.push(cnt);
+                    row.push(pct + '%');
+                });
+                rows.push(row);
+            });
+
+            var csvContent = rows.map(function(row) {
+                return row.map(function(cell) {
+                    if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
+                        return '"' + cell.replace(/"/g, '""') + '"';
+                    }
+                    return cell;
+                }).join(',');
+            }).join('\n');
+
+            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            var url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'meeting_frequency_by_category_' + new Date().toISOString().split('T')[0] + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.exportMeetingFrequency = exportMeetingFrequency;
 
         function buildCharts() {
             buildMeetingTypeChart();
@@ -3387,6 +3688,18 @@
                     rows.push(['Uncategorized', location, data.students.size, data.appointments, data.checkins, data.events, total]);
                 }
             });
+
+            // Add grand total row
+            var grandStudents = new Set();
+            var grandAppts = 0, grandCheckins = 0, grandEvents = 0;
+            Object.keys(locationData).forEach(function(location) {
+                var data = locationData[location];
+                data.students.forEach(function(sid) { grandStudents.add(sid); });
+                grandAppts += data.appointments;
+                grandCheckins += data.checkins;
+                grandEvents += data.events;
+            });
+            rows.push(['Grand Total', '', grandStudents.size, grandAppts, grandCheckins, grandEvents, grandAppts + grandCheckins + grandEvents]);
 
             let csvContent = rows.map(function(row) {
                 return row.map(function(cell) {
