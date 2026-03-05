@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 4.8</title>
+    <title>Navigate Student Engagement Metrics App - Version 4.9</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -640,8 +640,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V4.8</h1>
-            <div class="subtitle">Version 4.8 - Released March 4, 2026</div>
+            <h1>📚 Navigate Student Engagement Metrics App_V4.9</h1>
+            <div class="subtitle">Version 4.9 - Released March 4, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
         </header>
 
@@ -2332,55 +2332,6 @@
                 { name: 'Transfer Support', check: function(cu, loc) { return isTransferSupportAppointment(cu, loc); } }
             ];
 
-            // Initialize counts: { studentId: { 'Any': 0, 'Advising': 0, ... } }
-            var studentCategoryCounts = {};
-            filteredStudentData.forEach(function(s) {
-                var sid = s['Student ID'];
-                studentCategoryCounts[sid] = {};
-                categories.forEach(function(cat) {
-                    studentCategoryCounts[sid][cat.name] = 0;
-                });
-            });
-
-            var enrolledIds = new Set(Object.keys(studentCategoryCounts));
-
-            // Count appointments
-            filteredAppointmentData.forEach(function(a) {
-                var sid = a['Student ID'];
-                if (!enrolledIds.has(sid)) return;
-                var cu = a['Care Unit'] || '';
-                var loc = a['Location'] || '';
-
-                // Any always counts
-                studentCategoryCounts[sid]['Any']++;
-
-                // Check each specific category
-                for (var i = 1; i < categories.length; i++) {
-                    if (categories[i].check(cu, loc)) {
-                        studentCategoryCounts[sid][categories[i].name]++;
-                    }
-                }
-            });
-
-            // Count events
-            if (!appointmentFiltersActive && hasEventsData) {
-                filteredEventData.forEach(function(e) {
-                    var sid = e['Student ID'];
-                    if (!enrolledIds.has(sid)) return;
-                    var cu = e['Care Unit'] || '';
-                    var loc = e['Location'] || '';
-
-                    studentCategoryCounts[sid]['Any']++;
-
-                    for (var i = 1; i < categories.length; i++) {
-                        if (categories[i].check(cu, loc)) {
-                            studentCategoryCounts[sid][categories[i].name]++;
-                        }
-                    }
-                });
-            }
-
-            // Build frequency buckets for each category
             var bucketDefs = [
                 { label: '0', min: 0, max: 0 },
                 { label: '1', min: 1, max: 1 },
@@ -2391,36 +2342,148 @@
                 { label: '6+', min: 6, max: Infinity }
             ];
 
-            // Store for export: { categoryName: [bucket0count, bucket1count, ...] }
-            window.meetingFrequencyData = {};
+            // Initialize per-student counts for category AND category+location
+            // studentCategoryCounts[sid][catName] = total count
+            // studentCatLocCounts[sid][catName][location] = count at that location
+            var studentCategoryCounts = {};
+            var studentCatLocCounts = {};
+            filteredStudentData.forEach(function(s) {
+                var sid = s['Student ID'];
+                studentCategoryCounts[sid] = {};
+                studentCatLocCounts[sid] = {};
+                categories.forEach(function(cat) {
+                    studentCategoryCounts[sid][cat.name] = 0;
+                    studentCatLocCounts[sid][cat.name] = {};
+                });
+            });
 
-            categories.forEach(function(cat) {
-                var bucketCounts = bucketDefs.map(function() { return 0; });
+            var enrolledIds = new Set(Object.keys(studentCategoryCounts));
 
-                Object.keys(studentCategoryCounts).forEach(function(sid) {
-                    var count = studentCategoryCounts[sid][cat.name];
+            function processRecord(sid, cu, loc) {
+                var recordLoc = loc || '(No Location)';
+                studentCategoryCounts[sid]['Any']++;
+
+                for (var i = 1; i < categories.length; i++) {
+                    if (categories[i].check(cu, loc)) {
+                        studentCategoryCounts[sid][categories[i].name]++;
+                        if (!studentCatLocCounts[sid][categories[i].name][recordLoc]) {
+                            studentCatLocCounts[sid][categories[i].name][recordLoc] = 0;
+                        }
+                        studentCatLocCounts[sid][categories[i].name][recordLoc]++;
+                    }
+                }
+            }
+
+            // Count appointments
+            filteredAppointmentData.forEach(function(a) {
+                var sid = a['Student ID'];
+                if (!enrolledIds.has(sid)) return;
+                processRecord(sid, a['Care Unit'] || '', a['Location'] || '');
+            });
+
+            // Count events
+            if (!appointmentFiltersActive && hasEventsData) {
+                filteredEventData.forEach(function(e) {
+                    var sid = e['Student ID'];
+                    if (!enrolledIds.has(sid)) return;
+                    processRecord(sid, e['Care Unit'] || '', e['Location'] || '');
+                });
+            }
+
+            // Helper: compute bucket counts from an array of per-student counts
+            function computeBuckets(countsArray) {
+                var result = bucketDefs.map(function() { return 0; });
+                countsArray.forEach(function(count) {
                     for (var i = 0; i < bucketDefs.length; i++) {
                         if (count >= bucketDefs[i].min && count <= bucketDefs[i].max) {
-                            bucketCounts[i]++;
+                            result[i]++;
                             break;
                         }
                     }
                 });
+                return result;
+            }
 
-                window.meetingFrequencyData[cat.name] = bucketCounts;
+            // Build cell HTML
+            function buildCells(bucketCounts) {
+                var html = '';
+                bucketCounts.forEach(function(cnt) {
+                    var pct = totalStudents > 0 ? (cnt / totalStudents * 100).toFixed(1) : 0;
+                    html += '<td><span class="number-cell">' + cnt.toLocaleString() + '</span> <span class="percentage-cell">(' + pct + '%)</span></td>';
+                });
+                return html;
+            }
+
+            // Store for export
+            window.meetingFrequencyData = {};
+            window.meetingFrequencyLocationData = {};
+
+            // Build rows
+            categories.forEach(function(cat, catIndex) {
+                // Category-level bucket counts
+                var allSids = Object.keys(studentCategoryCounts);
+                var catCounts = allSids.map(function(sid) { return studentCategoryCounts[sid][cat.name]; });
+                var catBuckets = computeBuckets(catCounts);
+
+                window.meetingFrequencyData[cat.name] = catBuckets;
 
                 var row = document.createElement('tr');
                 if (cat.name === 'Any') {
                     row.style.fontWeight = 'bold';
                     row.style.backgroundColor = '#f0f9ff';
+                    row.innerHTML = '<td>' + cat.name + '</td>' + buildCells(catBuckets);
+                } else {
+                    row.style.cursor = 'pointer';
+                    row.setAttribute('data-category', cat.name);
+                    row.onclick = function() {
+                        var catName = this.getAttribute('data-category');
+                        var locRows = tbody.querySelectorAll('.loc-row-' + catName.replace(/[^a-zA-Z]/g, ''));
+                        var arrow = this.querySelector('.expand-arrow');
+                        if (locRows.length > 0 && locRows[0].style.display !== 'none') {
+                            locRows.forEach(function(r) { r.style.display = 'none'; });
+                            arrow.textContent = '▶';
+                        } else {
+                            locRows.forEach(function(r) { r.style.display = ''; });
+                            arrow.textContent = '▼';
+                        }
+                    };
+                    row.innerHTML = '<td><span class="expand-arrow" style="display: inline-block; width: 16px; font-size: 10px; color: #718096;">▶</span> ' + cat.name + '</td>' + buildCells(catBuckets);
                 }
-                var html = '<td>' + cat.name + '</td>';
-                bucketCounts.forEach(function(cnt) {
-                    var pct = totalStudents > 0 ? (cnt / totalStudents * 100).toFixed(1) : 0;
-                    html += '<td><span class="number-cell">' + cnt.toLocaleString() + '</span> <span class="percentage-cell">(' + pct + '%)</span></td>';
-                });
-                row.innerHTML = html;
                 tbody.appendChild(row);
+
+                // Location sub-rows (not for "Any")
+                if (cat.name !== 'Any') {
+                    // Find all locations for this category
+                    var locationSet = {};
+                    allSids.forEach(function(sid) {
+                        var locs = studentCatLocCounts[sid][cat.name];
+                        Object.keys(locs).forEach(function(loc) {
+                            locationSet[loc] = true;
+                        });
+                    });
+
+                    var locations = Object.keys(locationSet).sort();
+                    var safeClassName = cat.name.replace(/[^a-zA-Z]/g, '');
+
+                    window.meetingFrequencyLocationData[cat.name] = {};
+
+                    locations.forEach(function(location) {
+                        // For this location within this category, count per student
+                        var locCounts = allSids.map(function(sid) {
+                            return studentCatLocCounts[sid][cat.name][location] || 0;
+                        });
+                        var locBuckets = computeBuckets(locCounts);
+
+                        window.meetingFrequencyLocationData[cat.name][location] = locBuckets;
+
+                        var locRow = document.createElement('tr');
+                        locRow.className = 'loc-row-' + safeClassName;
+                        locRow.style.display = 'none';
+                        locRow.style.backgroundColor = '#fafafa';
+                        locRow.innerHTML = '<td style="padding-left: 35px; color: #718096; font-size: 12px;">↳ ' + location + '</td>' + buildCells(locBuckets);
+                        tbody.appendChild(locRow);
+                    });
+                }
             });
         }
 
@@ -2439,10 +2502,12 @@
                 header.push(label + ' (#)');
                 header.push(label + ' (%)');
             });
+
             var rows = [header];
 
             var categoryOrder = ['Any', 'Advising', 'Career Services', 'Tutoring', 'Campus Life', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
 
+            // Category summary rows
             categoryOrder.forEach(function(catName) {
                 var bucketCounts = window.meetingFrequencyData[catName];
                 if (!bucketCounts) return;
@@ -2453,6 +2518,35 @@
                     row.push(pct + '%');
                 });
                 rows.push(row);
+            });
+
+            // Blank separator row
+            rows.push([]);
+
+            // Location detail section
+            var locHeader = ['Category', 'Location'];
+            bucketLabels.forEach(function(label) {
+                locHeader.push(label + ' (#)');
+                locHeader.push(label + ' (%)');
+            });
+            rows.push(locHeader);
+
+            categoryOrder.forEach(function(catName) {
+                if (catName === 'Any') return;
+                var locData = window.meetingFrequencyLocationData[catName];
+                if (!locData) return;
+
+                var locations = Object.keys(locData).sort();
+                locations.forEach(function(location) {
+                    var bucketCounts = locData[location];
+                    var row = [catName, location];
+                    bucketCounts.forEach(function(cnt) {
+                        var pct = totalStudents > 0 ? (cnt / totalStudents * 100).toFixed(1) : '0.0';
+                        row.push(cnt);
+                        row.push(pct + '%');
+                    });
+                    rows.push(row);
+                });
             });
 
             var csvContent = rows.map(function(row) {
