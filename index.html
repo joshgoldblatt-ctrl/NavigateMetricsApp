@@ -635,14 +635,175 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .update-history-toggle {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.85);
+            border: 1px solid rgba(255,255,255,0.9);
+            border-radius: 20px;
+            color: #1e3a5f;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .update-history-toggle:hover {
+            background: rgba(255,255,255,1);
+            color: #1e3a5f;
+        }
+        .update-history-panel {
+            display: none;
+            margin-top: 15px;
+            background: rgba(255,255,255,0.92);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: left;
+            max-height: 400px;
+            overflow-y: auto;
+            color: #1e293b;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .update-history-panel.open {
+            display: block;
+        }
+        .version-entry {
+            margin-bottom: 18px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .version-entry:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .version-header {
+            font-weight: 700;
+            font-size: 14px;
+            color: #1e3a5f;
+            margin-bottom: 5px;
+        }
+        .version-date {
+            font-size: 12px;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+        .version-changes {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .version-changes li {
+            margin-bottom: 3px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>📚 Navigate Student Engagement Metrics App_V4.9</h1>
-            <div class="subtitle">Version 4.9 - Released March 4, 2026</div>
+            <div class="subtitle">Version 4.9 - Released March 6, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
+            <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
+            <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.9</div>
+                    <div class="version-date">March 6, 2026</div>
+                    <ul class="version-changes">
+                        <li>Meeting Frequency Distribution table now has expandable location dropdowns for each category (click ▶ to expand)</li>
+                        <li>CSV export includes a second section with location-level detail by category</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.8</div>
+                    <div class="version-date">March 4, 2026</div>
+                    <ul class="version-changes">
+                        <li>Meeting Frequency Distribution table redesigned with categories as rows and meeting count buckets (0–6+) as columns</li>
+                        <li>Added CSV export button for meeting frequency data</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.7</div>
+                    <div class="version-date">March 4, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added Meeting Frequency Distribution table showing how many students had 0, 1, 2, 3, 4, 5, or 6+ total meetings</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.6</div>
+                    <div class="version-date">March 3, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added Grand Total row to Contributions table CSV export</li>
+                        <li>Added four new Meeting Frequency score cards: Average and Median meetings per student for all enrolled students AND engaged-only students</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.5</div>
+                    <div class="version-date">March 3, 2026</div>
+                    <ul class="version-changes">
+                        <li>Transfer Support category rule changed: now requires Care Unit = "Transfer" AND Location = "Transfer Engagement Initiative (TEI)" (replaces old Location = "Transfer Support" rule)</li>
+                        <li>Events now use the same categorization logic as appointments (all 8 categories apply to events)</li>
+                        <li>Removed separate event categorization functions</li>
+                        <li>Merged Location Contributions and Event Contributions tables into a single "Contributions by Category &amp; Location" table</li>
+                        <li>New table columns: Category, Location, Unique Students, Appointments, Check-ins, Events, Total (enrolled students only)</li>
+                        <li>Added Uncategorized section and Grand Total row to contributions table</li>
+                        <li>Updated Data Dictionary and diagnostic modal for new Transfer rule</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.4</div>
+                    <div class="version-date">February 9, 2026</div>
+                    <ul class="version-changes">
+                        <li>Advising: Added "CUNY Start" and "Peer Advisor Academy" to approved locations</li>
+                        <li>Campus Life: Added Location = "VP of Student Affairs" as a trigger regardless of Care Unit</li>
+                        <li>Updated Data Dictionary and diagnostic modal with new rules</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.3</div>
+                    <div class="version-date">February 5, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added Student ID validation filter — removes appointment/event records with empty Student IDs after file loading</li>
+                        <li>Resolved issue where blank rows in appointment file were creating "(No Location)" entries</li>
+                        <li>Filtered record count logged to console for troubleshooting</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.2</div>
+                    <div class="version-date">January 31, 2026</div>
+                    <ul class="version-changes">
+                        <li>Changed Self-Booked Appointments table from cumulative (1+, 2+, 3+, 4+) to mutually exclusive buckets (0, 1+, Exactly 1, Exactly 2, Exactly 3, 4+)</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.1</div>
+                    <div class="version-date">January 30, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added Self-Booked Appointments table by credit buckets</li>
+                        <li>Renamed Location Contributions columns: Total Students → Unique Students, Enrolled Students → Unique Enrolled Students, % Enrolled → % Appts w/ Enrolled</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 4.0</div>
+                    <div class="version-date">January 29, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added Navigate Platform Logins tracking feature (5th optional CSV upload)</li>
+                        <li>Displays login rates by credit buckets</li>
+                    </ul>
+                </div>
+
+            </div>
         </header>
 
         <!-- Error Message -->
@@ -2570,6 +2731,11 @@
         }
 
         window.exportMeetingFrequency = exportMeetingFrequency;
+
+        function toggleUpdateHistory() {
+            var panel = document.getElementById('updateHistoryPanel');
+            panel.classList.toggle('open');
+        }
 
         function buildCharts() {
             buildMeetingTypeChart();
