@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 4.9</title>
+    <title>Navigate Student Engagement Metrics App - Version 5.0</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -702,11 +702,25 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V4.9</h1>
-            <div class="subtitle">Version 4.9 - Released March 6, 2026</div>
+            <h1>📚 Navigate Student Engagement Metrics App_V5</h1>
+            <div class="subtitle">Version 5 - Released March 24, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 5.0</div>
+                    <div class="version-date">March 24, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added separate Check-in Report upload — no longer need to pre-merge appointments and check-ins</li>
+                        <li>App now generates Source column internally (Appointment, Check-in, Event, CARES Case)</li>
+                        <li>Renamed "Appointment Report" upload and removed Source from required columns</li>
+                        <li>Added Tableau Export: Engagement Records button — exports all appointments, check-ins, events, and CARES cases with assigned categories, student index, enrollment status, and student attributes for enrolled students</li>
+                        <li>Added Tableau Export: Student Roster button — exports enrolled students with demographics, engagement flags, and matching student index</li>
+                        <li>Student Index column links both exports without exposing Student ID in Tableau</li>
+                        <li>Updated Data Dictionary documentation</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 4.9</div>
@@ -848,8 +862,23 @@
                         • Reported Meeting Type<br>
                         • Appointment Type<br>
                         • Reported Start Date<br>
-                        • Appointment Created By<br>
-                        • Source
+                        • Appointment Created By
+                    </div>
+                </div>
+
+                <div class="upload-box optional" id="checkinUploadBox">
+                    <h3>✅ Check-in Report <span class="optional-badge">Optional</span></h3>
+                    <input type="file" id="checkinFile" class="file-input" accept=".csv">
+                    <label for="checkinFile" class="file-label">Choose Check-in File</label>
+                    <div class="file-info" id="checkinFileInfo">No file selected</div>
+                    <div style="margin-top: 10px; padding: 10px; background: #f7fafc; border-radius: 5px; font-size: 11px; text-align: left;">
+                        <strong>Required Columns:</strong><br>
+                        • Student ID<br>
+                        • Student Name<br>
+                        • Care Unit<br>
+                        • Location<br>
+                        • Student Services<br>
+                        • Check In Date
                     </div>
                 </div>
 
@@ -1169,11 +1198,13 @@
                 <div style="margin-top: 30px; padding: 20px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
                     <h4 style="color: #0c4a6e; font-size: 16px; margin-bottom: 10px;">ℹ️ Important Notes:</h4>
                     <ul style="color: #075985; font-size: 14px; line-height: 1.8;">
-                        <li><strong>"Any Engagement"</strong> counts all appointments AND events from enrolled students, regardless of category</li>
+                        <li><strong>"Any Engagement"</strong> counts all appointments, check-ins, AND events from enrolled students, regardless of category</li>
                         <li>Appointments/events that don't meet any category criteria still count toward "Any Engagement" but not specific categories</li>
                         <li>The <strong>"Show Uncategorized Appointments"</strong> button helps identify appointments not falling into defined categories</li>
                         <li>Filters apply to both the source data and the categorization results</li>
                         <li>Event categorization is <strong>case-insensitive</strong> (e.g., "ADVISING" and "advising" are treated the same)</li>
+                        <li>The <strong>Source</strong> column is now auto-generated: "Appointment" for appointment records, "Check-in" for check-in records, "CARES Case" for LaGuardia Cares cases</li>
+                        <li><strong>Tableau Exports:</strong> The Engagement Records and Student Roster exports share a matching Student Index column. Do NOT upload Student Name or Student ID to Tableau — use the Student Index for joining.</li>
                     </ul>
                 </div>
             </div>
@@ -1194,6 +1225,15 @@
             <button class="export-btn" style="background: #667eea;" onmouseover="this.style.background='#5a67d8'" onmouseout="this.style.background='#667eea'" onclick="showUncategorizedAppointments()">
                 🔍 Show Uncategorized Appointments
             </button>
+
+            <!-- Tableau Export Buttons -->
+            <button class="export-btn" style="background: #e85d04;" onmouseover="this.style.background='#c44d03'" onmouseout="this.style.background='#e85d04'" onclick="exportTableauEngagement()">
+                📊 Tableau Export: Engagement Records
+            </button>
+            
+            <button class="export-btn" style="background: #e85d04;" onmouseover="this.style.background='#c44d03'" onmouseout="this.style.background='#e85d04'" onclick="exportTableauStudentRoster()">
+                👤 Tableau Export: Student Roster
+            </button>
             
             <!-- Events Info Badge -->
             <span id="eventsInfoBadge" style="display: none; background: #e9d5ff; color: #7c3aed; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;">
@@ -1203,6 +1243,11 @@
             <!-- Cases Info Badge -->
             <span id="casesInfoBadge" style="display: none; background: #d1fae5; color: #065f46; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;">
                 💚 Cases data included
+            </span>
+
+            <!-- Check-in Info Badge -->
+            <span id="checkinInfoBadge" style="display: none; background: #dbeafe; color: #1e40af; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;">
+                ✅ Check-in data included
             </span>
             
             <!-- Logins Info Badge -->
@@ -1512,12 +1557,14 @@
         // Global variables
         let studentData = [];
         let appointmentData = [];
+        let checkinData = [];
         let eventData = [];
         let casesData = [];
         let loginData = [];
         let filteredStudentData = [];
         let filteredAppointmentData = [];
         let filteredEventData = [];
+        let hasCheckinData = false;
         let hasEventsData = false;
         let hasCasesData = false;
         let hasLoginData = false;
@@ -1527,6 +1574,7 @@
             // Set up event listeners
             document.getElementById('studentFile').addEventListener('change', handleStudentFileSelect);
             document.getElementById('appointmentFile').addEventListener('change', handleAppointmentFileSelect);
+            document.getElementById('checkinFile').addEventListener('change', handleCheckinFileSelect);
             document.getElementById('eventsFile').addEventListener('change', handleEventsFileSelect);
             document.getElementById('casesFile').addEventListener('change', handleCasesFileSelect);
             document.getElementById('loginsFile').addEventListener('change', handleLoginsFileSelect);
@@ -1581,6 +1629,14 @@
             }
         }
 
+        function handleCheckinFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('checkinFileInfo').textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
+                document.getElementById('checkinUploadBox').classList.add('loaded');
+            }
+        }
+
         function handleEventsFileSelect(e) {
             const file = e.target.files[0];
             if (file) {
@@ -1625,6 +1681,7 @@
             
             const studentFile = document.getElementById('studentFile').files[0];
             const appointmentFile = document.getElementById('appointmentFile').files[0];
+            const checkinFile = document.getElementById('checkinFile').files[0];
             const eventsFile = document.getElementById('eventsFile').files[0];
             const casesFile = document.getElementById('casesFile').files[0];
             const loginsFile = document.getElementById('loginsFile').files[0];
@@ -1642,24 +1699,64 @@
                 // Process Student File
                 updateProgress(10, 'Loading student data...');
                 studentData = await parseCSVFile(studentFile, function(progress) {
-                    updateProgress(10 + progress * 25, `Processing student data: ${Math.round(progress * 100)}%`);
+                    updateProgress(10 + progress * 20, `Processing student data: ${Math.round(progress * 100)}%`);
                 });
                 
                 console.log(`Loaded ${studentData.length} student records`);
                 
                 // Process Appointment File
-                updateProgress(35, 'Loading appointment data...');
+                updateProgress(30, 'Loading appointment data...');
                 appointmentData = await parseCSVFile(appointmentFile, function(progress) {
-                    updateProgress(35 + progress * 25, `Processing appointment data: ${Math.round(progress * 100)}%`);
+                    updateProgress(30 + progress * 20, `Processing appointment data: ${Math.round(progress * 100)}%`);
+                });
+                
+                // Add Source = 'Appointment' to each appointment row
+                appointmentData.forEach(function(row) {
+                    row['Source'] = 'Appointment';
                 });
                 
                 console.log(`Loaded ${appointmentData.length} appointment records`);
 
+                // Process Check-in File (if provided)
+                if (checkinFile) {
+                    updateProgress(50, 'Loading check-in data...');
+                    const rawCheckinData = await parseCSVFile(checkinFile, function(progress) {
+                        updateProgress(50 + progress * 5, `Processing check-in data: ${Math.round(progress * 100)}%`);
+                    });
+                    
+                    // Map check-in columns to appointment column names and add Source
+                    checkinData = rawCheckinData.map(function(row) {
+                        return {
+                            'Student ID': row['Student ID'] || '',
+                            'Student Name': row['Student Name'] || '',
+                            'Care Unit': row['Care Unit'] || '',
+                            'Location': row['Location'] || '',
+                            'Reported Services': row['Student Services'] || '',
+                            'Reported Course Name': row['Course Name'] || '',
+                            'Reported Course Number': row['Course Number'] || '',
+                            'Reported Meeting Type': '',
+                            'Appointment Type': 'Check-in',
+                            'Reported Start Date': row['Check In Date'] || '',
+                            'Appointment Created By': '',
+                            'Staff Organizer Name': row['Staff Name'] || '',
+                            'Source': 'Check-in'
+                        };
+                    });
+                    
+                    // Merge check-ins into appointment data
+                    appointmentData = appointmentData.concat(checkinData);
+                    hasCheckinData = true;
+                    console.log(`Loaded and merged ${checkinData.length} check-in records`);
+                } else {
+                    checkinData = [];
+                    hasCheckinData = false;
+                }
+
                 // Process Events File (if provided)
                 if (eventsFile) {
-                    updateProgress(50, 'Loading events data...');
+                    updateProgress(55, 'Loading events data...');
                     eventData = await parseCSVFile(eventsFile, function(progress) {
-                        updateProgress(50 + progress * 10, `Processing events data: ${Math.round(progress * 100)}%`);
+                        updateProgress(55 + progress * 5, `Processing events data: ${Math.round(progress * 100)}%`);
                     });
                     hasEventsData = true;
                     console.log(`Loaded ${eventData.length} event records`);
@@ -1672,7 +1769,7 @@
                 if (casesFile) {
                     updateProgress(60, 'Loading cases data...');
                     const rawCasesData = await parseCSVFile(casesFile, function(progress) {
-                        updateProgress(60 + progress * 10, `Processing cases data: ${Math.round(progress * 100)}%`);
+                        updateProgress(60 + progress * 5, `Processing cases data: ${Math.round(progress * 100)}%`);
                     });
                     
                     // Transform cases data to appointment format and merge
@@ -1688,7 +1785,7 @@
                             'Reported Start Date': caseRecord['Opened At Date'],
                             'Appointment Created By': '',
                             'Staff Organizer Name': caseRecord['Opened By (user list)'],
-                            'Source': 'Cases'
+                            'Source': 'CARES Case'
                         };
                     });
                     
@@ -1762,6 +1859,9 @@
                 
                 // Show/hide cases badge
                 document.getElementById('casesInfoBadge').style.display = hasCasesData ? 'inline-block' : 'none';
+
+                // Show/hide check-in badge
+                document.getElementById('checkinInfoBadge').style.display = hasCheckinData ? 'inline-block' : 'none';
                 
                 // Show/hide logins badge and table
                 document.getElementById('loginsInfoBadge').style.display = hasLoginData ? 'inline-block' : 'none';
@@ -4226,6 +4326,291 @@
 
         // Make export function available globally
         window.exportEnhancedStudentData = exportEnhancedStudentData;
+
+        // Build a consistent Student Index mapping across all data sources
+        function buildStudentIndexMap() {
+            const allStudentIds = new Set();
+            
+            // Collect all unique Student IDs from all data sources
+            filteredAppointmentData.forEach(function(a) {
+                if (a['Student ID']) allStudentIds.add(a['Student ID'].toString().trim());
+            });
+            if (!appointmentFiltersActive && hasEventsData) {
+                filteredEventData.forEach(function(e) {
+                    if (e['Student ID']) allStudentIds.add(e['Student ID'].toString().trim());
+                });
+            }
+            filteredStudentData.forEach(function(s) {
+                if (s['Student ID']) allStudentIds.add(s['Student ID'].toString().trim());
+            });
+            
+            // Sort for consistency and assign index numbers
+            const sortedIds = Array.from(allStudentIds).sort();
+            const indexMap = {};
+            sortedIds.forEach(function(id, i) {
+                indexMap[id] = i + 1;
+            });
+            return indexMap;
+        }
+
+        // Determine all categories for a record (returns array of matching category names)
+        function getRecordCategories(careUnit, location) {
+            var cats = [];
+            if (isAdvisingAppointment(careUnit, location)) cats.push('Advising');
+            if (isCareerAppointment(careUnit)) cats.push('Career Services');
+            if (isTutoringAppointment(careUnit, location)) cats.push('Tutoring');
+            if (isCampusLifeAppointment(careUnit, location)) cats.push('Campus Life');
+            if (isEnrollmentAppointment(careUnit)) cats.push('Enrollment');
+            if (isPayingForCollegeAppointment(careUnit)) cats.push('Paying for College');
+            if (isAcademicDeptsAppointment(careUnit)) cats.push('Academic Depts & Library');
+            if (isTransferSupportAppointment(careUnit, location)) cats.push('Transfer Support');
+            return cats.length > 0 ? cats.join('; ') : 'Uncategorized';
+        }
+
+        // Tableau Export: Engagement Records
+        function exportTableauEngagement() {
+            try {
+                const indexMap = buildStudentIndexMap();
+                const enrolledStudentIds = new Set();
+                filteredStudentData.forEach(function(s) {
+                    enrolledStudentIds.add(s['Student ID']);
+                });
+
+                // Build a lookup map for student attributes (enrolled students only)
+                const studentAttrMap = {};
+                filteredStudentData.forEach(function(s) {
+                    studentAttrMap[s['Student ID']] = {
+                        'Student Type': s['Student Type'] || '',
+                        'Advising Office': s['Advising Office'] || '',
+                        'Predicted Support Level': s['Predicted Support Level'] || '',
+                        'Major': s['MAJOR'] || ''
+                    };
+                });
+
+                const reportDate = new Date().toLocaleDateString('en-US');
+                const rows = [];
+
+                // Process appointments (includes check-ins and CARES cases since they were merged)
+                filteredAppointmentData.forEach(function(a) {
+                    const sid = (a['Student ID'] || '').toString().trim();
+                    const careUnit = a['Care Unit'] || '';
+                    const location = a['Location'] || '';
+                    const isEnrolled = enrolledStudentIds.has(sid);
+                    const attrs = studentAttrMap[sid] || {};
+
+                    rows.push({
+                        'Student Index': indexMap[sid] || '',
+                        'Student Name': a['Student Name'] || '',
+                        'Student ID': sid,
+                        'Enrolled': isEnrolled ? 'Yes' : 'No',
+                        'Student Type': isEnrolled ? attrs['Student Type'] : '',
+                        'Advising Office': isEnrolled ? attrs['Advising Office'] : '',
+                        'Predicted Support Level': isEnrolled ? attrs['Predicted Support Level'] : '',
+                        'Major': isEnrolled ? attrs['Major'] : '',
+                        'Source': a['Source'] || 'Appointment',
+                        'Assigned Category': getRecordCategories(careUnit, location),
+                        'Care Unit': careUnit,
+                        'Location': location,
+                        'Engagement Date': a['Reported Start Date'] || '',
+                        'Reported Services': a['Reported Services'] || '',
+                        'Reported Course Name': a['Reported Course Name'] || '',
+                        'Courses Course Number': a['Reported Course Number'] || a['Courses Course Number'] || '',
+                        'Reported Meeting Type': a['Reported Meeting Type'] || '',
+                        'Appointment Type': a['Appointment Type'] || '',
+                        'Reported Start Date': a['Reported Start Date'] || '',
+                        'Event Display Name': '',
+                        'Event Location Name': '',
+                        'Event Start Date/Time': '',
+                        'Opened At Date': a['Source'] === 'CARES Case' ? (a['Reported Start Date'] || '') : '',
+                        'Report Date': reportDate
+                    });
+                });
+
+                // Process events
+                if (!appointmentFiltersActive && hasEventsData) {
+                    filteredEventData.forEach(function(e) {
+                        const sid = (e['Student ID'] || '').toString().trim();
+                        const careUnit = e['Care Unit'] || '';
+                        const location = e['Location'] || '';
+                        const isEnrolled = enrolledStudentIds.has(sid);
+                        const attrs = studentAttrMap[sid] || {};
+
+                        rows.push({
+                            'Student Index': indexMap[sid] || '',
+                            'Student Name': e['Student Name'] || '',
+                            'Student ID': sid,
+                            'Enrolled': isEnrolled ? 'Yes' : 'No',
+                            'Student Type': isEnrolled ? attrs['Student Type'] : '',
+                            'Advising Office': isEnrolled ? attrs['Advising Office'] : '',
+                            'Predicted Support Level': isEnrolled ? attrs['Predicted Support Level'] : '',
+                            'Major': isEnrolled ? attrs['Major'] : '',
+                            'Source': 'Event',
+                            'Assigned Category': getRecordCategories(careUnit, location),
+                            'Care Unit': careUnit,
+                            'Location': location,
+                            'Engagement Date': e['Event Start Date/Time'] || '',
+                            'Reported Services': '',
+                            'Reported Course Name': '',
+                            'Courses Course Number': '',
+                            'Reported Meeting Type': '',
+                            'Appointment Type': '',
+                            'Reported Start Date': '',
+                            'Event Display Name': e['Event Display Name'] || '',
+                            'Event Location Name': e['Event Location Name'] || '',
+                            'Event Start Date/Time': e['Event Start Date/Time'] || '',
+                            'Opened At Date': '',
+                            'Report Date': reportDate
+                        });
+                    });
+                }
+
+                // Convert to CSV
+                const csv = Papa.unparse(rows);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                const now = new Date();
+                const timestamp = now.getFullYear() + 
+                    ('0' + (now.getMonth() + 1)).slice(-2) + 
+                    ('0' + now.getDate()).slice(-2) + '_' +
+                    ('0' + now.getHours()).slice(-2) + 
+                    ('0' + now.getMinutes()).slice(-2);
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'tableau_engagement_records_' + timestamp + '.csv');
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showSuccess('Tableau Engagement Records exported! ' + rows.length + ' records. Remember: do NOT upload Student Name or Student ID columns to Tableau.');
+                
+            } catch (error) {
+                console.error('Error exporting Tableau engagement data:', error);
+                showError('Error exporting data: ' + error.message);
+            }
+        }
+
+        // Tableau Export: Student Roster
+        function exportTableauStudentRoster() {
+            try {
+                const indexMap = buildStudentIndexMap();
+                const enrolledStudentIds = new Set();
+                filteredStudentData.forEach(function(s) {
+                    enrolledStudentIds.add(s['Student ID']);
+                });
+
+                // Filter appointments to only include enrolled students
+                const enrolledAppointments = filteredAppointmentData.filter(function(a) {
+                    return enrolledStudentIds.has(a['Student ID']);
+                });
+
+                // Filter events to only include enrolled students
+                const enrolledEvents = (appointmentFiltersActive) ? [] : filteredEventData.filter(function(e) {
+                    return enrolledStudentIds.has(e['Student ID']);
+                });
+
+                // Build engagement map
+                const studentEngagementMap = {};
+                filteredStudentData.forEach(function(student) {
+                    const studentId = student['Student ID'];
+                    studentEngagementMap[studentId] = {
+                        any: false, advising: false, career: false, tutoring: false,
+                        campusLife: false, enrollment: false, payingForCollege: false,
+                        academicDepts: false, transferSupport: false
+                    };
+                });
+
+                enrolledAppointments.forEach(function(a) {
+                    const sid = a['Student ID'];
+                    if (!studentEngagementMap[sid]) return;
+                    studentEngagementMap[sid].any = true;
+                    const cu = a['Care Unit'] || '', loc = a['Location'] || '';
+                    if (isAdvisingAppointment(cu, loc)) studentEngagementMap[sid].advising = true;
+                    if (isCareerAppointment(cu)) studentEngagementMap[sid].career = true;
+                    if (isTutoringAppointment(cu, loc)) studentEngagementMap[sid].tutoring = true;
+                    if (isCampusLifeAppointment(cu, loc)) studentEngagementMap[sid].campusLife = true;
+                    if (isEnrollmentAppointment(cu)) studentEngagementMap[sid].enrollment = true;
+                    if (isPayingForCollegeAppointment(cu)) studentEngagementMap[sid].payingForCollege = true;
+                    if (isAcademicDeptsAppointment(cu)) studentEngagementMap[sid].academicDepts = true;
+                    if (isTransferSupportAppointment(cu, loc)) studentEngagementMap[sid].transferSupport = true;
+                });
+
+                enrolledEvents.forEach(function(e) {
+                    const sid = e['Student ID'];
+                    if (!studentEngagementMap[sid]) return;
+                    studentEngagementMap[sid].any = true;
+                    const cu = e['Care Unit'] || '', loc = e['Location'] || '';
+                    if (isAdvisingAppointment(cu, loc)) studentEngagementMap[sid].advising = true;
+                    if (isCareerAppointment(cu)) studentEngagementMap[sid].career = true;
+                    if (isTutoringAppointment(cu, loc)) studentEngagementMap[sid].tutoring = true;
+                    if (isCampusLifeAppointment(cu, loc)) studentEngagementMap[sid].campusLife = true;
+                    if (isEnrollmentAppointment(cu)) studentEngagementMap[sid].enrollment = true;
+                    if (isPayingForCollegeAppointment(cu)) studentEngagementMap[sid].payingForCollege = true;
+                    if (isAcademicDeptsAppointment(cu)) studentEngagementMap[sid].academicDepts = true;
+                    if (isTransferSupportAppointment(cu, loc)) studentEngagementMap[sid].transferSupport = true;
+                });
+
+                const reportDate = new Date().toLocaleDateString('en-US');
+
+                const rows = filteredStudentData.map(function(student) {
+                    const sid = student['Student ID'];
+                    const eng = studentEngagementMap[sid] || {};
+                    return {
+                        'Student Index': indexMap[sid] || '',
+                        'Student Name': student['Student Name'] || (student['First Name'] ? (student['First Name'] + ' ' + (student['Last Name'] || '')) : ''),
+                        'Student ID': sid,
+                        'Advising Office': student['Advising Office'] || '',
+                        'Cumulative GPA': student['Cumulative GPA'] || '',
+                        'Earned Credits': student['Earned Credits'] || '',
+                        'Predicted Support Level': student['Predicted Support Level'] || '',
+                        'Student Type': student['Student Type'] || '',
+                        'Major': student['MAJOR'] || '',
+                        'Student Academic Department': student['Academic Department'] || '',
+                        'Had Any Engagement': eng.any ? 'Yes' : 'No',
+                        'Had Advising Engagement': eng.advising ? 'Yes' : 'No',
+                        'Had Career Services Engagement': eng.career ? 'Yes' : 'No',
+                        'Had Tutoring Engagement': eng.tutoring ? 'Yes' : 'No',
+                        'Had Campus Life Engagement': eng.campusLife ? 'Yes' : 'No',
+                        'Had Enrollment Engagement': eng.enrollment ? 'Yes' : 'No',
+                        'Had Paying for College Engagement': eng.payingForCollege ? 'Yes' : 'No',
+                        'Had Academic Depts & Library Engagement': eng.academicDepts ? 'Yes' : 'No',
+                        'Had Transfer Support Engagement': eng.transferSupport ? 'Yes' : 'No',
+                        'Report Date': reportDate
+                    };
+                });
+
+                const csv = Papa.unparse(rows);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                const now = new Date();
+                const timestamp = now.getFullYear() + 
+                    ('0' + (now.getMonth() + 1)).slice(-2) + 
+                    ('0' + now.getDate()).slice(-2) + '_' +
+                    ('0' + now.getHours()).slice(-2) + 
+                    ('0' + now.getMinutes()).slice(-2);
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'tableau_student_roster_' + timestamp + '.csv');
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showSuccess('Tableau Student Roster exported! ' + rows.length + ' students. Remember: do NOT upload Student Name or Student ID columns to Tableau.');
+                
+            } catch (error) {
+                console.error('Error exporting Tableau student roster:', error);
+                showError('Error exporting data: ' + error.message);
+            }
+        }
+
+        // Make Tableau export functions available globally
+        window.exportTableauEngagement = exportTableauEngagement;
+        window.exportTableauStudentRoster = exportTableauStudentRoster;
 
         // Export Score Cards to CSV
         function exportScoreCards() {
