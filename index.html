@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 5.2</title>
+    <title>Navigate Student Engagement Metrics App - Version 5.4</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -832,11 +832,29 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V5.2</h1>
-            <div class="subtitle">Version 5.2 - Released April 14, 2026</div>
+            <h1>📚 Navigate Student Engagement Metrics App_V5.4</h1>
+            <div class="subtitle">Version 5.4 - Released April 14, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 5.4</div>
+                    <div class="version-date">April 14, 2026</div>
+                    <ul class="version-changes">
+                        <li>Score Cards CSV export now includes Platform Logins (count + %), Self-Booked Appointments (all 6 buckets: 0, 1+, Exactly 1, Exactly 2, Exactly 3, 4+), Meeting Frequency Average and Median for all enrolled students, and Meeting Frequency Average and Median for engaged-only students</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 5.3</div>
+                    <div class="version-date">April 14, 2026</div>
+                    <ul class="version-changes">
+                        <li>Fixed Student ID normalization — appointment exports from Navigate sometimes include a ".0" decimal suffix (e.g., "12023474.0"); the app now strips this on load so IDs match the student roster correctly</li>
+                        <li>This fix resolves: Self-Booked Appointments table showing all zeros, Meeting Frequency by Category missing offices, and Contributions by Category & Location missing offices</li>
+                        <li>Student ID normalization applied to all uploaded files: appointment, check-in, events, CARES cases, and platform logins</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 5.2</div>
@@ -2253,7 +2271,7 @@
                     rawLoginsData.forEach(function(row) {
                         const studentId = row['Student ID'];
                         if (studentId && studentId.toString().trim() !== '') {
-                            loginData.add(studentId.toString().trim());
+                            loginData.add(normalizeStudentId(studentId.toString().trim()));
                         }
                     });
                     hasLoginData = true;
@@ -2416,6 +2434,18 @@
             return str;
         }
 
+        // ─── Normalize Student ID ────────────────────────────────────────────────
+        // Navigate appointment exports sometimes produce IDs with a ".0" decimal
+        // suffix (e.g. "12023474.0") due to how the CSV is generated. This strips
+        // the suffix so IDs match the student roster format consistently.
+        function normalizeStudentId(rawId) {
+            if (rawId === null || rawId === undefined) return '';
+            var s = rawId.toString().trim();
+            // Remove trailing .0 (and .00, .000 etc.)
+            s = s.replace(/\.0+$/, '');
+            return s;
+        }
+
         // ─── Resolve Student Name from roster row ────────────────────────────────
         // Navigate caseload/roster exports use "Name" column with "Last, First" format.
         // Fall back to other common column patterns.
@@ -2445,8 +2475,38 @@
                         normalizedRow[normalizedKey] = row[key];
                     }
                 }
+                // Normalize Student ID
+                if (normalizedRow['Student ID'] !== undefined) {
+                    normalizedRow['Student ID'] = normalizeStudentId(normalizedRow['Student ID']);
+                }
                 return normalizedRow;
             });
+
+            // Normalize Student IDs in appointment/check-in/event data
+            appointmentData = appointmentData.map(function(row) {
+                if (row['Student ID'] !== undefined) {
+                    row['Student ID'] = normalizeStudentId(row['Student ID']);
+                }
+                return row;
+            });
+
+            if (hasEventsData) {
+                eventData = eventData.map(function(row) {
+                    if (row['Student ID'] !== undefined) {
+                        row['Student ID'] = normalizeStudentId(row['Student ID']);
+                    }
+                    return row;
+                });
+            }
+
+            // Normalize login IDs
+            if (hasLoginData) {
+                var normalizedLogins = new Set();
+                loginData.forEach(function(id) {
+                    normalizedLogins.add(normalizeStudentId(id));
+                });
+                loginData = normalizedLogins;
+            }
 
             filteredStudentData = studentData.slice();
             filteredAppointmentData = appointmentData.slice();
@@ -3894,28 +3954,121 @@
                 });
 
                 const overallEnrollmentPct = allStudentsInData.size > 0 ? (enrolledStudentsInData.size / allStudentsInData.size * 100).toFixed(1) : 0;
-                var p = function(set) { return totalStudents > 0 ? (set.size / totalStudents * 100).toFixed(1) + '%' : '0%'; };
+                var p = function(count) { return totalStudents > 0 ? (count / totalStudents * 100).toFixed(1) + '%' : '0%'; };
+                var pSet = function(set) { return p(set.size); };
 
+                // ── Platform Logins ──────────────────────────────────────────────
+                var loginsCount = 0;
+                if (hasLoginData) {
+                    filteredStudentData.forEach(function(s) {
+                        if (loginData.has(s['Student ID'])) loginsCount++;
+                    });
+                }
+
+                // ── Self-Booked Scheduled Appointments ──────────────────────────
+                var selfBookedCounts = {};
+                filteredStudentData.forEach(function(s) { selfBookedCounts[s['Student ID']] = 0; });
+                var scheduledAppts = filteredAppointmentData.filter(function(a) {
+                    return enrolledStudentIds.has(a['Student ID']) &&
+                           a['Appointment Type'] === 'Scheduled' &&
+                           a['Source'] !== 'Check-in' &&
+                           a['Student Name'] && a['Appointment Created By'] &&
+                           a['Student Name'].trim() === a['Appointment Created By'].trim();
+                });
+                scheduledAppts.forEach(function(a) {
+                    if (selfBookedCounts[a['Student ID']] !== undefined) selfBookedCounts[a['Student ID']]++;
+                });
+                var sbZero = 0, sbOnePlus = 0, sbExact1 = 0, sbExact2 = 0, sbExact3 = 0, sbFourPlus = 0;
+                Object.values(selfBookedCounts).forEach(function(count) {
+                    if (count === 0) sbZero++;
+                    if (count >= 1) sbOnePlus++;
+                    if (count === 1) sbExact1++;
+                    if (count === 2) sbExact2++;
+                    if (count === 3) sbExact3++;
+                    if (count >= 4) sbFourPlus++;
+                });
+
+                // ── Meeting Frequency ────────────────────────────────────────────
+                var meetingCounts = {};
+                filteredStudentData.forEach(function(s) { meetingCounts[s['Student ID']] = 0; });
+                filteredAppointmentData.forEach(function(a) {
+                    if (meetingCounts[a['Student ID']] !== undefined) meetingCounts[a['Student ID']]++;
+                });
+                if (!appointmentFiltersActive && hasEventsData) {
+                    filteredEventData.forEach(function(e) {
+                        if (meetingCounts[e['Student ID']] !== undefined) meetingCounts[e['Student ID']]++;
+                    });
+                }
+                var allMeetingCounts = Object.values(meetingCounts);
+                var engagedMeetingCounts = allMeetingCounts.filter(function(c) { return c > 0; });
+                var totalMeetings = allMeetingCounts.reduce(function(s, c) { return s + c; }, 0);
+
+                function calcAvg(arr) {
+                    if (!arr.length) return '0.0';
+                    return (arr.reduce(function(s, c) { return s + c; }, 0) / arr.length).toFixed(1);
+                }
+                function calcMedian(arr) {
+                    if (!arr.length) return '0.0';
+                    var sorted = arr.slice().sort(function(a, b) { return a - b; });
+                    var mid = Math.floor(sorted.length / 2);
+                    return (sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]).toFixed(1);
+                }
+
+                var avgAll = calcAvg(allMeetingCounts);
+                var medAll = calcMedian(allMeetingCounts);
+                var avgEngaged = calcAvg(engagedMeetingCounts);
+                var medEngaged = calcMedian(engagedMeetingCounts);
+
+                // ── Build rows ───────────────────────────────────────────────────
                 const rows = [
                     ['Semester', semesterLabel],
                     [],
                     ['Metric', 'Count', 'Percentage', 'Notes'],
                     ['% Appts with Enrolled Students', enrolledStudentsInData.size + ' of ' + allStudentsInData.size, overallEnrollmentPct + '%', 'Unique students in appointment/event data who are enrolled'],
                     ['Total Enrolled Students', totalStudents, '', 'From student enrollment file'],
-                    ['Any Engagement', sets.engagement.size, p(sets.engagement), 'of total enrolled students'],
-                    ['Advising', sets.advising.size, p(sets.advising), 'of total enrolled students'],
-                    ['Career Services', sets.career.size, p(sets.career), 'of total enrolled students'],
-                    ['Tutoring', sets.tutoring.size, p(sets.tutoring), 'of total enrolled students'],
-                    ['Campus Life', sets.campusLife.size, p(sets.campusLife), 'of total enrolled students'],
-                    ['Enrollment', sets.enrollment.size, p(sets.enrollment), 'of total enrolled students'],
-                    ['Paying for College', sets.payingForCollege.size, p(sets.payingForCollege), 'of total enrolled students'],
-                    ['Academic Depts & Library', sets.academicDepts.size, p(sets.academicDepts), 'of total enrolled students'],
-                    ['Transfer Support', sets.transferSupport.size, p(sets.transferSupport), 'of total enrolled students']
+                    [],
+                    ['--- Engagement ---', '', '', ''],
+                    ['Any Engagement', sets.engagement.size, pSet(sets.engagement), 'of total enrolled students'],
+                    ['Advising', sets.advising.size, pSet(sets.advising), 'of total enrolled students'],
+                    ['Career Services', sets.career.size, pSet(sets.career), 'of total enrolled students'],
+                    ['Tutoring', sets.tutoring.size, pSet(sets.tutoring), 'of total enrolled students'],
+                    ['Campus Life', sets.campusLife.size, pSet(sets.campusLife), 'of total enrolled students'],
+                    ['Enrollment', sets.enrollment.size, pSet(sets.enrollment), 'of total enrolled students'],
+                    ['Paying for College', sets.payingForCollege.size, pSet(sets.payingForCollege), 'of total enrolled students'],
+                    ['Academic Depts & Library', sets.academicDepts.size, pSet(sets.academicDepts), 'of total enrolled students'],
+                    ['Transfer Support', sets.transferSupport.size, pSet(sets.transferSupport), 'of total enrolled students']
                 ];
 
                 if (hasEventsData) {
-                    rows.push(['Attended Events', sets.events.size, p(sets.events), 'of total enrolled students']);
+                    rows.push(['Attended Events', sets.events.size, pSet(sets.events), 'of total enrolled students']);
                 }
+
+                // Platform Logins
+                if (hasLoginData) {
+                    rows.push([]);
+                    rows.push(['--- Platform Logins ---', '', '', '']);
+                    rows.push(['Logged Into Navigate', loginsCount, p(loginsCount), 'of total enrolled students']);
+                }
+
+                // Self-Booked
+                rows.push([]);
+                rows.push(['--- Self-Booked Scheduled Appointments ---', '', '', '']);
+                rows.push(['0 Self-Booked',    sbZero,     p(sbZero),     'of total enrolled students']);
+                rows.push(['1+ Self-Booked',   sbOnePlus,  p(sbOnePlus),  'of total enrolled students']);
+                rows.push(['Exactly 1',        sbExact1,   p(sbExact1),   'of total enrolled students']);
+                rows.push(['Exactly 2',        sbExact2,   p(sbExact2),   'of total enrolled students']);
+                rows.push(['Exactly 3',        sbExact3,   p(sbExact3),   'of total enrolled students']);
+                rows.push(['4+',               sbFourPlus, p(sbFourPlus), 'of total enrolled students']);
+
+                // Meeting Frequency
+                rows.push([]);
+                rows.push(['--- Meeting Frequency (All Enrolled Students) ---', '', '', '']);
+                rows.push(['Average Meetings per Student', avgAll, '', totalMeetings + ' total meetings / ' + totalStudents + ' enrolled students']);
+                rows.push(['Median Meetings per Student',  medAll, '', 'across all enrolled students']);
+                rows.push([]);
+                rows.push(['--- Meeting Frequency (Engaged Students Only) ---', '', '', '']);
+                rows.push(['Average Meetings per Engaged Student', avgEngaged, '', totalMeetings + ' total meetings / ' + engagedMeetingCounts.length + ' engaged students']);
+                rows.push(['Median Meetings per Engaged Student',  medEngaged, '', 'students with 1+ meeting']);
 
                 downloadCSV(rows, buildFilename('Score_Cards'));
                 showSuccess('Score cards exported successfully!');
