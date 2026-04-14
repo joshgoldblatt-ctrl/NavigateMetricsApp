@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 5.1</title>
+    <title>Navigate Student Engagement Metrics App - Version 5.2</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -706,6 +706,66 @@
             }
         }
 
+        /* Dedup threshold picker — sits in same row as semester picker */
+        .dedup-picker {
+            background: #fff8f0;
+            border: 2px solid #fbd38d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .dedup-picker-label {
+            font-weight: 700;
+            color: #7b341e;
+            font-size: 15px;
+            white-space: nowrap;
+        }
+        .dedup-threshold-input {
+            padding: 9px 14px;
+            border: 2px solid #fbd38d;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #7b341e;
+            background: white;
+            width: 90px;
+            text-align: center;
+        }
+        .dedup-threshold-input:focus {
+            outline: none;
+            border-color: #ed8936;
+            box-shadow: 0 0 0 3px rgba(237,137,54,0.2);
+        }
+        .dedup-picker-note {
+            font-size: 13px;
+            color: #975a16;
+            font-style: italic;
+        }
+
+        /* Duplicates Removed section */
+        .dedup-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        .dedup-summary-table th, .dedup-summary-table td {
+            padding: 9px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .dedup-summary-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .dedup-summary-table tr:hover { background: #f7fafc; }
+        .dedup-highlight { color: #c05621; font-weight: 700; }
+
         .update-history-toggle {
             display: inline-block;
             margin-top: 8px;
@@ -772,11 +832,23 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V5.1</h1>
-            <div class="subtitle">Version 5.1 - Released April 13, 2026</div>
+            <h1>📚 Navigate Student Engagement Metrics App_V5.2</h1>
+            <div class="subtitle">Version 5.2 - Released April 14, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 5.2</div>
+                    <div class="version-date">April 14, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added automatic duplicate detection for appointment and check-in reports — duplicates are removed before any metrics are calculated</li>
+                        <li>Duplicate logic: same Student ID + same Location within a configurable time window (default 60 minutes)</li>
+                        <li>Time threshold picker added near semester selector — adjustable before processing</li>
+                        <li>New "Duplicates Removed" collapsible section shows total records removed, broken down by file type and location</li>
+                        <li>All exports (Tableau Engagement Records, Tableau Student Roster, Enhanced Student Data, Score Cards, Meeting Frequency, Contributions) use deduplicated data</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 5.1</div>
@@ -930,6 +1002,13 @@
                 <span id="semesterPreview" class="semester-preview">Select a term and year</span>
             </div>
             
+            <!-- Dedup Threshold Picker -->
+            <div class="dedup-picker">
+                <span class="dedup-picker-label">🔁 Duplicate Threshold</span>
+                <input type="number" id="dedupThreshold" class="dedup-threshold-input" value="60" min="1" max="1440">
+                <span class="dedup-picker-note">minutes — same Student ID + Location within this window = duplicate (applied to Appointments &amp; Check-ins before processing)</span>
+            </div>
+
             <div class="upload-grid">
                 <div class="upload-box" id="studentUploadBox">
                     <h3>📚 Student Report</h3>
@@ -1310,6 +1389,18 @@
             </div>
         </div>
 
+        <!-- Duplicates Removed Section (Collapsible) -->
+        <div class="collapsible-section" id="dedupSection" style="display: none;">
+            <div class="collapsible-header" onclick="toggleSection('dedupContent', this)">
+                <span class="toggle-icon">▶</span>
+                <h2 style="color: #2c3e50; font-size: 20px; margin: 0;">🔁 Duplicates Removed</h2>
+                <span id="dedupSectionBadge" style="margin-left: 15px; font-size: 13px; color: #975a16; background: #fefcbf; border: 1px solid #f6e05e; border-radius: 12px; padding: 2px 10px;"></span>
+            </div>
+            <div class="collapsible-content" id="dedupContent">
+                <div id="dedupSummaryInner"></div>
+            </div>
+        </div>
+
         <!-- Dashboard Section -->
         <div class="dashboard-section" id="dashboardSection">
             <!-- Export Buttons -->
@@ -1613,7 +1704,206 @@
             return code + '_' + safeName + '_' + date + '.csv';
         }
 
-        // ─── Global helper functions ─────────────────────────────────────────────
+        // ─── Duplicate Detection ─────────────────────────────────────────────────
+
+        /**
+         * Parse a date + time string from Navigate exports.
+         * Handles ' ET' suffix and 12-hour format: "04/14/2026 10:30 AM"
+         * Returns a Date object or null on failure.
+         */
+        function parseNavigateDateTime(dateStr, timeStr) {
+            if (!dateStr || !timeStr) return null;
+            var cleanTime = timeStr.toString().replace(/ ET$/i, '').trim();
+            var combined = dateStr.toString().trim() + ' ' + cleanTime;
+            // Try native parse first
+            var d = new Date(combined);
+            if (!isNaN(d.getTime())) return d;
+            // Manual parse: MM/DD/YYYY HH:MM AM/PM
+            var m = combined.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+            if (!m) return null;
+            var month = parseInt(m[1], 10) - 1;
+            var day = parseInt(m[2], 10);
+            var year = parseInt(m[3], 10);
+            var hour = parseInt(m[4], 10);
+            var minute = parseInt(m[5], 10);
+            var ampm = m[6].toUpperCase();
+            if (ampm === 'AM' && hour === 12) hour = 0;
+            if (ampm === 'PM' && hour !== 12) hour += 12;
+            return new Date(year, month, day, hour, minute, 0);
+        }
+
+        /**
+         * Detect and flag duplicates in an array of row objects.
+         * @param {Array}  rows          - array of parsed CSV row objects
+         * @param {string} dateCol       - column name for date  (e.g. 'Reported Start Date')
+         * @param {string} timeCol       - column name for time  (e.g. 'Reported Start Time')
+         * @param {number} thresholdMin  - minutes window for duplicate detection
+         * @returns {{ clean: Array, removedCount: number, locationCounts: Object }}
+         *   clean          - rows with duplicates removed (originals + unmatched kept)
+         *   removedCount   - total duplicate rows removed
+         *   locationCounts - { locationName: { duplicates: N } }
+         */
+        function detectAndRemoveDuplicates(rows, dateCol, timeCol, thresholdMin) {
+            // Build a map: key = Location + '|||' + StudentID → sorted list of {dt, idx}
+            var groups = {};
+            rows.forEach(function(row, idx) {
+                var location = (row['Location'] || '(No Location)').toString().trim();
+                var studentId = (row['Student ID'] || '').toString().trim();
+                if (!studentId) return; // skip blank student IDs
+                var key = location + '|||' + studentId;
+                if (!groups[key]) groups[key] = [];
+                var dt = parseNavigateDateTime(row[dateCol], row[timeCol]);
+                groups[key].push({ dt: dt, idx: idx });
+            });
+
+            // Flag array: false = keep, true = remove
+            var removeFlags = new Array(rows.length).fill(false);
+            var locationCounts = {};
+
+            Object.keys(groups).forEach(function(key) {
+                var group = groups[key];
+                // Sort by datetime (nulls last)
+                group.sort(function(a, b) {
+                    if (!a.dt && !b.dt) return 0;
+                    if (!a.dt) return 1;
+                    if (!b.dt) return -1;
+                    return a.dt - b.dt;
+                });
+
+                var i = 0;
+                while (i < group.length) {
+                    var anchor = group[i];
+                    if (!anchor.dt) { i++; continue; }
+                    // Find all subsequent rows within threshold
+                    var cluster = [i];
+                    var j = i + 1;
+                    while (j < group.length && group[j].dt) {
+                        var diffMin = (group[j].dt - anchor.dt) / 60000;
+                        if (diffMin <= thresholdMin) {
+                            cluster.push(j);
+                            j++;
+                        } else {
+                            break;
+                        }
+                    }
+                    if (cluster.length > 1) {
+                        // Keep first (original), flag rest as duplicates
+                        var parts = key.split('|||');
+                        var loc = parts[0];
+                        for (var k = 1; k < cluster.length; k++) {
+                            removeFlags[group[cluster[k]].idx] = true;
+                            if (!locationCounts[loc]) locationCounts[loc] = 0;
+                            locationCounts[loc]++;
+                        }
+                    }
+                    i = j > i + 1 ? j : i + 1; // advance past cluster
+                }
+            });
+
+            var clean = rows.filter(function(_, idx) { return !removeFlags[idx]; });
+            var removedCount = removeFlags.filter(Boolean).length;
+            return { clean: clean, removedCount: removedCount, locationCounts: locationCounts };
+        }
+
+        // Store dedup results for the summary panel
+        var dedupResults = { appointments: null, checkins: null, thresholdUsed: 60 };
+
+        function buildDedupSummary() {
+            var section = document.getElementById('dedupSection');
+            var inner = document.getElementById('dedupSummaryInner');
+            var badge = document.getElementById('dedupSectionBadge');
+
+            var apptResult = dedupResults.appointments;
+            var ciResult   = dedupResults.checkins;
+            var threshold  = dedupResults.thresholdUsed;
+
+            var totalRemoved = (apptResult ? apptResult.removedCount : 0) +
+                               (ciResult   ? ciResult.removedCount   : 0);
+
+            badge.textContent = totalRemoved.toLocaleString() + ' duplicate' + (totalRemoved !== 1 ? 's' : '') + ' removed (' + threshold + '-min window)';
+            section.style.display = 'block';
+
+            var html = '<div style="background:#fffbeb;border:1px solid #f6e05e;border-radius:8px;padding:16px;margin-bottom:20px;">';
+            html += '<strong style="color:#744210;">Threshold used: ' + threshold + ' minutes</strong> — same Student ID + Location within this window counted as a duplicate.<br>';
+            html += '<span style="color:#975a16;">Duplicates are removed before all metric calculations and exports.</span>';
+            html += '</div>';
+
+            // Summary boxes
+            html += '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:24px;">';
+
+            function summaryBox(label, removed, total, color) {
+                var kept = total - removed;
+                return '<div style="background:white;border:2px solid ' + color + ';border-radius:8px;padding:16px;min-width:200px;">' +
+                    '<div style="font-size:12px;color:#718096;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">' + label + '</div>' +
+                    '<div style="font-size:24px;font-weight:700;color:' + color + ';">' + removed.toLocaleString() + ' removed</div>' +
+                    '<div style="font-size:13px;color:#4a5568;">' + kept.toLocaleString() + ' of ' + total.toLocaleString() + ' records kept</div>' +
+                    '</div>';
+            }
+
+            if (apptResult) {
+                var apptTotal = apptResult.clean.length + apptResult.removedCount;
+                html += summaryBox('Appointment Report', apptResult.removedCount, apptTotal, '#dd6b20');
+            }
+            if (ciResult) {
+                var ciTotal = ciResult.clean.length + ciResult.removedCount;
+                html += summaryBox('Check-in Report', ciResult.removedCount, ciTotal, '#2b6cb0');
+            }
+            html += '</div>';
+
+            // Location breakdown table
+            var allLocations = {};
+            if (apptResult) {
+                Object.keys(apptResult.locationCounts).forEach(function(loc) {
+                    if (!allLocations[loc]) allLocations[loc] = { appt: 0, ci: 0 };
+                    allLocations[loc].appt += apptResult.locationCounts[loc];
+                });
+            }
+            if (ciResult) {
+                Object.keys(ciResult.locationCounts).forEach(function(loc) {
+                    if (!allLocations[loc]) allLocations[loc] = { appt: 0, ci: 0 };
+                    allLocations[loc].ci += ciResult.locationCounts[loc];
+                });
+            }
+
+            var locationKeys = Object.keys(allLocations).sort(function(a, b) {
+                var totalA = allLocations[a].appt + allLocations[a].ci;
+                var totalB = allLocations[b].appt + allLocations[b].ci;
+                return totalB - totalA;
+            });
+
+            if (locationKeys.length > 0) {
+                html += '<h3 style="color:#2d3748;font-size:16px;margin-bottom:10px;">Duplicates Removed by Location</h3>';
+                html += '<div style="overflow-x:auto;"><table class="dedup-summary-table">';
+                html += '<thead><tr><th>Location</th>';
+                if (apptResult) html += '<th>Appointments Removed</th>';
+                if (ciResult)   html += '<th>Check-ins Removed</th>';
+                html += '<th>Total Removed</th></tr></thead><tbody>';
+
+                locationKeys.forEach(function(loc) {
+                    var d = allLocations[loc];
+                    var total = d.appt + d.ci;
+                    html += '<tr><td>' + loc + '</td>';
+                    if (apptResult) html += '<td>' + (d.appt > 0 ? '<span class="dedup-highlight">' + d.appt.toLocaleString() + '</span>' : '—') + '</td>';
+                    if (ciResult)   html += '<td>' + (d.ci  > 0 ? '<span class="dedup-highlight">' + d.ci.toLocaleString()  + '</span>' : '—') + '</td>';
+                    html += '<td><strong>' + total.toLocaleString() + '</strong></td></tr>';
+                });
+
+                // Grand total row
+                var grandAppt = apptResult ? apptResult.removedCount : 0;
+                var grandCi   = ciResult   ? ciResult.removedCount   : 0;
+                html += '<tr style="font-weight:700;background:#f0f9ff;"><td>Grand Total</td>';
+                if (apptResult) html += '<td>' + grandAppt.toLocaleString() + '</td>';
+                if (ciResult)   html += '<td>' + grandCi.toLocaleString()   + '</td>';
+                html += '<td>' + (grandAppt + grandCi).toLocaleString() + '</td></tr>';
+                html += '</tbody></table></div>';
+            } else {
+                html += '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:8px;padding:16px;color:#276749;">✅ No duplicates detected in either file using a ' + threshold + '-minute window.</div>';
+            }
+
+            inner.innerHTML = html;
+        }
+
+
 
         window.selectAll = function(filterId) {
             var select = document.getElementById(filterId);
@@ -1854,6 +2144,21 @@
                 appointmentData.forEach(function(row) { row['Source'] = 'Appointment'; });
                 console.log(`Loaded ${appointmentData.length} appointment records`);
 
+                // ── Dedup appointments ──────────────────────────────────────────
+                var thresholdMin = parseInt(document.getElementById('dedupThreshold').value, 10) || 60;
+                dedupResults.thresholdUsed = thresholdMin;
+                var apptDedup = detectAndRemoveDuplicates(
+                    appointmentData,
+                    'Reported Start Date',
+                    'Reported Start Time',
+                    thresholdMin
+                );
+                dedupResults.appointments = apptDedup;
+                if (apptDedup.removedCount > 0) {
+                    console.log('Appointment dedup: removed ' + apptDedup.removedCount + ' duplicates');
+                }
+                appointmentData = apptDedup.clean;
+
                 if (checkinFile) {
                     updateProgress(50, 'Loading check-in data...');
                     const rawCheckinData = await parseCSVFile(checkinFile, function(progress) {
@@ -1871,17 +2176,33 @@
                             'Reported Meeting Type': '',
                             'Appointment Type': 'Check-in',
                             'Reported Start Date': row['Check In Date'] || '',
+                            'Reported Start Time': row['Check In Time'] || '',
                             'Appointment Created By': '',
                             'Staff Organizer Name': row['Staff Name'] || '',
                             'Source': 'Check-in'
                         };
                     });
+
+                    // ── Dedup check-ins ─────────────────────────────────────────
+                    var ciDedup = detectAndRemoveDuplicates(
+                        checkinData,
+                        'Reported Start Date',
+                        'Reported Start Time',
+                        thresholdMin
+                    );
+                    dedupResults.checkins = ciDedup;
+                    if (ciDedup.removedCount > 0) {
+                        console.log('Check-in dedup: removed ' + ciDedup.removedCount + ' duplicates');
+                    }
+                    checkinData = ciDedup.clean;
+
                     appointmentData = appointmentData.concat(checkinData);
                     hasCheckinData = true;
                     console.log(`Loaded and merged ${checkinData.length} check-in records`);
                 } else {
                     checkinData = [];
                     hasCheckinData = false;
+                    dedupResults.checkins = null;
                 }
 
                 if (eventsFile) {
@@ -1973,6 +2294,8 @@
                 
                 document.getElementById('filtersSection').style.display = 'block';
                 document.getElementById('dataDictionarySection').style.display = 'block';
+                document.getElementById('dedupSection').style.display = 'block';
+                buildDedupSummary();
                 document.getElementById('dashboardSection').style.display = 'block';
                 
                 document.getElementById('eventsInfoBadge').style.display = hasEventsData ? 'inline-block' : 'none';
