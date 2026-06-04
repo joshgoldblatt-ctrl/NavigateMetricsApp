@@ -1,9 +1,125 @@
+<!--
+================================================================================
+  App:          Navigate Student Engagement Metrics App
+  Version:      5.6
+  Released:     June 4, 2026
+  Developed by: Josh Goldblatt using Claude
+================================================================================
+  CHANGELOG (most recent first)
+--------------------------------------------------------------------------------
+  v5.6  2026-06-04
+    - Cascading filters: selecting Care Unit now repopulates Location, Reported
+      Services, and Source to only show values present in matching records;
+      selecting Location further narrows Reported Services; previously selected
+      values that remain valid are preserved; clearing Care Unit restores full
+      lists
+    - Duplicates Removed panel section labels now include the actual threshold
+      used (e.g., "≤60 min") for all three dedup sections
+
+  v5.5  2026-06-04
+    - Cross-file duplicate detection: after within-file dedup, check-in records
+      matching an appointment's Check In Date/Time (same Student ID + Location +
+      date, within threshold) are removed before merging; appointment record kept
+      as it has richer data
+    - Duplicates Removed panel now shows three sections: appointment within-file,
+      check-in within-file, and cross-file, each with location breakdown
+    - Date Range filter added to Filters section (From/To date pickers); applies
+      to Reported Start Date (appointments/check-ins) and Event Start Date/Time
+      (events); Reset All Filters also clears date inputs
+
+  v5.4  2026-04-14
+    - Score Cards CSV export expanded: now includes Platform Logins (count + %),
+      Self-Booked Appointments (all 6 buckets: 0, 1+, Exactly 1, Exactly 2,
+      Exactly 3, 4+), Meeting Frequency average and median for all enrolled
+      students, and Meeting Frequency average and median for engaged-only students
+    - Section dividers added to Score Cards CSV for readability
+
+  v5.3  2026-04-14
+    - Fixed Student ID normalization: Navigate appointment exports append ".0"
+      decimal suffix to Student IDs (e.g., "12023474.0"); app now strips this on
+      load across all five data sources so IDs match the student roster correctly
+    - BUG (fixed in v5.3): self-booked table showed all zeros, meeting frequency
+      by category missing offices, contributions table missing offices — all
+      caused by the .0 Student ID mismatch
+
+  v5.2  2026-04-14
+    - Automatic duplicate detection for appointment and check-in reports; runs
+      before metric calculations; same Student ID + Location within configurable
+      time window (default 60 min) = duplicate
+    - Time threshold picker added near semester selector
+    - Duplicates Removed collapsible section: total removed with location
+      breakdown for appointments and check-ins separately
+    - All exports use deduplicated data
+    - Check-in mapping now preserves Reported Start Time for dedup datetime parsing
+
+  v5.1  2026-04-13
+    - Semester Picker (FA/SP + year dropdowns) added above upload boxes; both
+      required before Process button enables; green preview confirms selection
+    - Semester column added to all four exports: Tableau Engagement Records,
+      Tableau Student Roster, Enhanced Student Data, Score Cards
+    - Export filenames now include semester code and date stamp
+      (e.g., FA25_Tableau_Engagement_Records_20260413.csv)
+    - Fixed blank Student Name in Tableau Student Roster: now reads from
+      Navigate's "Name" column (Last, First format) with fallback chain
+
+  v5.0  2026-03-24
+    - Separate Check-in Report upload added; app generates Source column
+      internally (Appointment, Check-in, Event, CARES Case)
+    - Tableau Export: Engagement Records — all appointments, check-ins, events,
+      CARES cases with assigned categories, student index, enrollment status
+    - Tableau Export: Student Roster — enrolled students with demographics,
+      engagement flags, matching student index
+    - Student Index links both exports without exposing Student ID in Tableau
+
+  v4.9  2026-03-06
+    - Meeting Frequency Distribution table: expandable location dropdowns per
+      category; CSV export includes location-level detail
+
+  v4.8  2026-03-04
+    - Meeting Frequency Distribution redesigned: categories as rows, meeting
+      count buckets (0–6+) as columns; CSV export added
+
+  v4.7  2026-03-04
+    - Meeting Frequency Distribution table added
+
+  v4.6  2026-03-03
+    - Grand Total row added to Contributions CSV export
+    - Four new Meeting Frequency score cards: avg/median for all enrolled and
+      engaged-only students
+
+  v4.5  2026-03-03
+    - Transfer Support rule updated: now requires Care Unit = "Transfer" AND
+      Location = "Transfer Engagement Initiative (TEI)"
+    - Events now use same categorization logic as appointments
+    - Location Contributions and Event Contributions merged into single table
+    - Uncategorized section and Grand Total row added to contributions table
+
+  v4.4  2026-02-09
+    - Advising: added "CUNY Start" and "Peer Advisor Academy" to approved locations
+    - Campus Life: added Location = "VP of Student Affairs" as trigger
+
+  v4.3  2026-02-05
+    - Student ID validation filter: removes records with empty Student IDs
+    - Fixed blank rows creating "(No Location)" entries
+
+  v4.2  2026-01-31
+    - Self-Booked table changed from cumulative to mutually exclusive buckets
+
+  v4.1  2026-01-30
+    - Self-Booked Appointments table by credit buckets added
+    - Location Contributions column renames
+
+  v4.0  2026-01-29
+    - Navigate Platform Logins tracking (5th optional CSV upload)
+    - Login rates by credit buckets
+================================================================================
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 5.4</title>
+    <title>Navigate Student Engagement Metrics App - Version 5.6</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -766,6 +882,58 @@
         .dedup-summary-table tr:hover { background: #f7fafc; }
         .dedup-highlight { color: #c05621; font-weight: 700; }
 
+        /* Date range filter */
+        .date-range-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #f0f9ff;
+            border: 1px solid #bee3f8;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .date-range-label {
+            font-weight: 700;
+            color: #2c5282;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .date-range-input {
+            padding: 7px 10px;
+            border: 2px solid #bee3f8;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #2c5282;
+            background: white;
+        }
+        .date-range-input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66,153,225,0.2);
+        }
+        .date-range-sep {
+            color: #718096;
+            font-size: 14px;
+        }
+        .date-clear-btn {
+            padding: 6px 14px;
+            background: #e2e8f0;
+            border: 1px solid #cbd5e0;
+            border-radius: 5px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #4a5568;
+            transition: background 0.2s;
+        }
+        .date-clear-btn:hover { background: #cbd5e0; }
+        .date-range-note {
+            font-size: 12px;
+            color: #718096;
+            font-style: italic;
+        }
+
         .update-history-toggle {
             display: inline-block;
             margin-top: 8px;
@@ -832,11 +1000,34 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V5.4</h1>
-            <div class="subtitle">Version 5.4 - Released April 14, 2026</div>
-            <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
+            <h1>📚 Navigate Student Engagement Metrics App</h1>
+            <div style="margin-top: 8px; font-size: 13px; color: #4a5568; line-height: 1.8;">
+                <strong>App:</strong> Navigate Student Engagement Metrics App<br>
+                <strong>Version:</strong> 5.6<br>
+                <strong>Released:</strong> June 4, 2026<br>
+                <strong>Developed by:</strong> Josh Goldblatt using Claude
+            </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 5.6</div>
+                    <div class="version-date">June 4, 2026</div>
+                    <ul class="version-changes">
+                        <li>Cascading filters — selecting Care Unit now repopulates Location, Reported Services, and Source to only show values present in matching records; selecting Location further narrows Reported Services; previously selected values that remain valid are preserved</li>
+                        <li>Duplicates Removed panel section labels now include the actual time threshold used (e.g., "≤60 min")</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 5.5</div>
+                    <div class="version-date">June 4, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added cross-file duplicate detection — after within-file dedup, check-in records that match an appointment's Check In Date/Time (same Student ID + Location + date, within threshold) are removed before merging; appointment record is kept as it has richer data</li>
+                        <li>Duplicates Removed panel now shows a third section for cross-file duplicates, broken down by location</li>
+                        <li>Added Date Range filter — From/To date pickers in the Filters section; applies to Reported Start Date (appointments), Check In Date (check-ins), and Event Start Date/Time (events)</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 5.4</div>
@@ -1137,6 +1328,18 @@
                 <button class="reset-filters-btn" id="resetFiltersBtn" onclick="event.stopPropagation(); resetAllFilters();">Reset All Filters</button>
             </div>
             <div class="collapsible-content" id="filtersContent">
+                <!-- Date Range Filter -->
+                <div class="date-range-group">
+                    <span class="date-range-label">📅 Date Range</span>
+                    <label style="font-size:13px;color:#4a5568;">From</label>
+                    <input type="date" id="dateFrom" class="date-range-input" onchange="applyFilters()">
+                    <span class="date-range-sep">→</span>
+                    <label style="font-size:13px;color:#4a5568;">To</label>
+                    <input type="date" id="dateTo" class="date-range-input" onchange="applyFilters()">
+                    <button class="date-clear-btn" onclick="clearDateFilter()">✕ Clear Dates</button>
+                    <span class="date-range-note">Filters on Reported Start Date (appointments), Check In Date (check-ins), Event Start Date/Time (events)</span>
+                </div>
+
                 <div style="background: #e6f3ff; padding: 12px; border-radius: 5px; margin-bottom: 20px; font-size: 14px;">
                 <strong>📌 How Filters Work:</strong><br>
                 • <strong>When filters are empty:</strong> ALL records are shown<br>
@@ -1921,10 +2124,138 @@
             inner.innerHTML = html;
         }
 
+        // ─── Cross-File Duplicate Detection ──────────────────────────────────────
+        // Removes check-in records that match an appointment's Check In Date/Time.
+        // Appointment record wins (richer data). Returns removed check-ins with detail.
 
+        function crossFileDeduplicate(appointmentRows, checkinRows, thresholdMin) {
+            // Build lookup from appointments that have Check In Date/Time populated
+            // Key: StudentID + '|||' + Location + '|||' + CheckInDate
+            var apptLookup = {};
+            appointmentRows.forEach(function(a) {
+                var ciDate = (a['Appt Check In Date'] || a['Check In Date'] || '').toString().trim();
+                var ciTime = (a['Appt Check In Time'] || a['Check In Time'] || '').toString().trim();
+                var sid    = (a['Student ID'] || '').toString().trim();
+                var loc    = (a['Location'] || '').toString().trim();
+                if (!ciDate || !sid) return;
+                var dt = parseNavigateDateTime(ciDate, ciTime);
+                if (!dt) return;
+                var key = sid + '|||' + loc + '|||' + ciDate;
+                if (!apptLookup[key]) apptLookup[key] = [];
+                apptLookup[key].push(dt);
+            });
+
+            var keepFlags = new Array(checkinRows.length).fill(true);
+            var locationCounts = {};
+            var removedCount = 0;
+
+            checkinRows.forEach(function(c, idx) {
+                var ciDate = (c['Reported Start Date'] || '').toString().trim();
+                var ciTime = (c['Reported Start Time'] || '').toString().trim();
+                var sid    = (c['Student ID'] || '').toString().trim();
+                var loc    = (c['Location'] || '').toString().trim();
+                if (!ciDate || !sid) return;
+                var ciDt = parseNavigateDateTime(ciDate, ciTime);
+                if (!ciDt) return;
+                var key = sid + '|||' + loc + '|||' + ciDate;
+                var candidates = apptLookup[key];
+                if (!candidates) return;
+                for (var i = 0; i < candidates.length; i++) {
+                    var diffMin = Math.abs((ciDt - candidates[i]) / 60000);
+                    if (diffMin <= thresholdMin) {
+                        keepFlags[idx] = false;
+                        removedCount++;
+                        locationCounts[loc] = (locationCounts[loc] || 0) + 1;
+                        break;
+                    }
+                }
+            });
+
+            var clean = checkinRows.filter(function(_, idx) { return keepFlags[idx]; });
+            return { clean: clean, removedCount: removedCount, locationCounts: locationCounts };
+        }
+
+        // Extend buildDedupSummary to include cross-file section
+        var dedupCrossFileResult = null;
+
+        function buildDedupSummary() {
+            var section = document.getElementById('dedupSection');
+            var inner   = document.getElementById('dedupSummaryInner');
+            var badge   = document.getElementById('dedupSectionBadge');
+
+            var apptResult   = dedupResults.appointments;
+            var ciResult     = dedupResults.checkins;
+            var crossResult  = dedupCrossFileResult;
+            var threshold    = dedupResults.thresholdUsed;
+
+            var totalRemoved = (apptResult  ? apptResult.removedCount  : 0) +
+                               (ciResult    ? ciResult.removedCount    : 0) +
+                               (crossResult ? crossResult.removedCount : 0);
+
+            badge.textContent = totalRemoved.toLocaleString() + ' duplicate' + (totalRemoved !== 1 ? 's' : '') + ' removed (' + threshold + '-min window)';
+            section.style.display = 'block';
+
+            var html = '<div style="background:#fffbeb;border:1px solid #f6e05e;border-radius:8px;padding:16px;margin-bottom:20px;">';
+            html += '<strong style="color:#744210;">Threshold used: ' + threshold + ' minutes</strong> — same Student ID + Location within this window counted as a duplicate.<br>';
+            html += '<span style="color:#975a16;">All duplicates are removed before metric calculations and exports.</span>';
+            html += '</div>';
+
+            // Summary boxes
+            html += '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:24px;">';
+
+            function summaryBox(label, removed, total, color, note) {
+                var kept = total - removed;
+                return '<div style="background:white;border:2px solid ' + color + ';border-radius:8px;padding:16px;min-width:200px;">' +
+                    '<div style="font-size:12px;color:#718096;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">' + label + '</div>' +
+                    '<div style="font-size:24px;font-weight:700;color:' + color + ';">' + removed.toLocaleString() + ' removed</div>' +
+                    '<div style="font-size:13px;color:#4a5568;">' + kept.toLocaleString() + ' of ' + total.toLocaleString() + ' records kept</div>' +
+                    (note ? '<div style="font-size:11px;color:#718096;margin-top:4px;">' + note + '</div>' : '') +
+                    '</div>';
+            }
+
+            if (apptResult) {
+                var apptTotal = apptResult.clean.length + apptResult.removedCount;
+                html += summaryBox('Appointment Report<br><span style="font-size:10px;font-weight:normal;">Within-file dedup</span>', apptResult.removedCount, apptTotal, '#dd6b20', '');
+            }
+            if (ciResult) {
+                var ciTotal = ciResult.clean.length + ciResult.removedCount;
+                html += summaryBox('Check-in Report<br><span style="font-size:10px;font-weight:normal;">Within-file dedup</span>', ciResult.removedCount, ciTotal, '#2b6cb0', '');
+            }
+            if (crossResult) {
+                var crossBase = crossResult.clean.length + crossResult.removedCount;
+                html += summaryBox('Check-in Report<br><span style="font-size:10px;font-weight:normal;">Cross-file dedup</span>', crossResult.removedCount, crossBase, '#6b46c1', 'Check-ins matching an appointment record');
+            }
+            html += '</div>';
+
+            // Helper: render a location breakdown table
+            function locationTable(result, label, color) {
+                if (!result || result.removedCount === 0) return '';
+                var locationKeys = Object.keys(result.locationCounts).sort(function(a, b) {
+                    return result.locationCounts[b] - result.locationCounts[a];
+                });
+                var out = '<h3 style="color:#2d3748;font-size:15px;margin:20px 0 8px;">' + label + '</h3>';
+                out += '<div style="overflow-x:auto;margin-bottom:20px;"><table class="dedup-summary-table">';
+                out += '<thead><tr><th>Location</th><th>Records Removed</th></tr></thead><tbody>';
+                locationKeys.forEach(function(loc) {
+                    out += '<tr><td>' + loc + '</td><td><span class="dedup-highlight">' + result.locationCounts[loc].toLocaleString() + '</span></td></tr>';
+                });
+                out += '<tr style="font-weight:700;background:#f0f9ff;"><td>Total</td><td>' + result.removedCount.toLocaleString() + '</td></tr>';
+                out += '</tbody></table></div>';
+                return out;
+            }
+
+            if (totalRemoved === 0) {
+                html += '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:8px;padding:16px;color:#276749;">✅ No duplicates detected using a ' + threshold + '-minute window.</div>';
+            } else {
+                html += locationTable(apptResult,  '📅 Appointment Within-File Duplicates by Location (≤' + threshold + ' min)', '#dd6b20');
+                html += locationTable(ciResult,    '✅ Check-in Within-File Duplicates by Location (≤' + threshold + ' min)',    '#2b6cb0');
+                html += locationTable(crossResult, '🔀 Cross-File Duplicates by Location (≤' + threshold + ' min — Check-in removed, Appointment kept)', '#6b46c1');
+            }
+
+            inner.innerHTML = html;
+        }
 
         window.selectAll = function(filterId) {
-            var select = document.getElementById(filterId);
             if (select) {
                 if (filterId === 'reportedServicesFilter' && select.options.length > 200) {
                     document.getElementById('reportedServicesCount').textContent = '(selecting all...)';
@@ -2214,6 +2545,17 @@
                     }
                     checkinData = ciDedup.clean;
 
+                    // ── Cross-file dedup ────────────────────────────────────────
+                    // Remove check-in records that match an appointment's Check In
+                    // Date/Time (same Student ID + Location + date, within threshold).
+                    // Appointment record wins — it has richer data.
+                    var crossDedup = crossFileDeduplicate(appointmentData, checkinData, thresholdMin);
+                    dedupCrossFileResult = crossDedup;
+                    if (crossDedup.removedCount > 0) {
+                        console.log('Cross-file dedup: removed ' + crossDedup.removedCount + ' check-in duplicates');
+                    }
+                    checkinData = crossDedup.clean;
+
                     appointmentData = appointmentData.concat(checkinData);
                     hasCheckinData = true;
                     console.log(`Loaded and merged ${checkinData.length} check-in records`);
@@ -2221,6 +2563,7 @@
                     checkinData = [];
                     hasCheckinData = false;
                     dedupResults.checkins = null;
+                    dedupCrossFileResult = null;
                 }
 
                 if (eventsFile) {
@@ -2515,46 +2858,30 @@
             populateFilters();
         }
 
-        function populateFilters() {
-            populateFilterOptions('majorFilter', getUniqueValues(studentData, 'MAJOR'));
-            populateFilterOptions('advisingOfficeFilter', getUniqueValues(studentData, 'Advising Office'));
-            populateFilterOptions('academicDepartmentFilter', getUniqueValues(studentData, 'Academic Department'));
-            populateFilterOptions('predictedSupportLevelFilter', getUniqueValues(studentData, 'Predicted Support Level'));
-            populateFilterOptions('careUnitFilter', getUniqueValues(appointmentData, 'Care Unit'));
-            
-            const rawServiceStrings = new Set();
-            appointmentData.forEach(function(row) {
-                const value = row['Reported Services'];
-                if (value && value.toString().trim() !== '') {
-                    rawServiceStrings.add(value.toString().trim());
+        // ─── Filter population helpers ────────────────────────────────────────────
+
+        // Repopulate a filter select with new options, preserving any currently
+        // selected values that still exist in the new option list.
+        function populateFilterOptions(selectId, options) {
+            var select = document.getElementById(selectId);
+            // Remember currently selected values
+            var previouslySelected = new Set();
+            for (var i = 0; i < select.options.length; i++) {
+                if (select.options[i].selected) {
+                    previouslySelected.add(select.options[i].value);
                 }
+            }
+            select.innerHTML = '';
+            options.forEach(function(option) {
+                var optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                // Re-select if it was selected before and is still valid
+                if (previouslySelected.has(option)) {
+                    optionElement.selected = true;
+                }
+                select.appendChild(optionElement);
             });
-            const individualServices = getUniqueValues(appointmentData, 'Reported Services');
-            console.log('Reported Services: Reduced from ' + rawServiceStrings.size + ' combinations to ' + individualServices.length + ' unique individual services');
-            if (rawServiceStrings.size > 100 && individualServices.length < rawServiceStrings.size / 2) {
-                showSuccess('Smart parsing reduced Reported Services from ' + rawServiceStrings.size + ' combinations to ' + individualServices.length + ' individual services!');
-            }
-            populateFilterOptions('reportedServicesFilter', individualServices);
-            populateFilterOptions('locationFilter', getUniqueValues(appointmentData, 'Location'));
-            populateFilterOptions('reportedMeetingTypeFilter', getUniqueValues(appointmentData, 'Reported Meeting Type'));
-            populateFilterOptions('appointmentTypeFilter', getUniqueValues(appointmentData, 'Appointment Type'));
-            populateFilterOptions('sourceFilter', getUniqueValues(appointmentData, 'Source'));
-
-            updateReportedServicesCount();
-            filterReportedServices();
-            
-            const reportedServicesSelect = document.getElementById('reportedServicesFilter');
-            if (reportedServicesSelect) {
-                reportedServicesSelect.addEventListener('change', function() {
-                    updateReportedServicesCount();
-                    applyFilters();
-                });
-            }
-
-            const filterSelects = document.querySelectorAll('.filter-select:not(#reportedServicesFilter)');
-            for (let i = 0; i < filterSelects.length; i++) {
-                filterSelects[i].addEventListener('change', applyFilters);
-            }
         }
 
         function getUniqueValues(data, field) {
@@ -2583,18 +2910,134 @@
             return Array.from(values).sort();
         }
 
-        function populateFilterOptions(selectId, options) {
-            const select = document.getElementById(selectId);
-            select.innerHTML = '';
-            options.forEach(function(option) {
-                const optionElement = document.createElement('option');
-                optionElement.value = option;
-                optionElement.textContent = option;
-                select.appendChild(optionElement);
+        // Get the subset of appointmentData matching currently selected Care Units
+        // (empty selection = all records)
+        function getApptDataForCascade() {
+            var selectedCareUnits = getSelectedValues('careUnitFilter');
+            if (selectedCareUnits.length === 0) return appointmentData;
+            return appointmentData.filter(function(a) {
+                return selectedCareUnits.indexOf(a['Care Unit'] || '') !== -1;
             });
         }
 
+        // Get the subset further filtered by currently selected Locations
+        function getApptDataForServiceCascade() {
+            var base = getApptDataForCascade();
+            var selectedLocations = getSelectedValues('locationFilter');
+            if (selectedLocations.length === 0) return base;
+            return base.filter(function(a) {
+                return selectedLocations.indexOf(a['Location'] || '') !== -1;
+            });
+        }
+
+        // Repopulate Location, Services, Source based on current Care Unit selection
+        function cascadeFromCareUnit() {
+            var apptSubset = getApptDataForCascade();
+            populateFilterOptions('locationFilter',            getUniqueValues(apptSubset, 'Location'));
+            populateFilterOptions('sourceFilter',              getUniqueValues(apptSubset, 'Source'));
+            // Services cascade further from location selection
+            cascadeFromLocation(apptSubset);
+        }
+
+        // Repopulate Services based on current Care Unit + Location selection
+        function cascadeFromLocation(apptSubset) {
+            var subset = apptSubset || getApptDataForCascade();
+            var selectedLocations = getSelectedValues('locationFilter');
+            if (selectedLocations.length > 0) {
+                subset = subset.filter(function(a) {
+                    return selectedLocations.indexOf(a['Location'] || '') !== -1;
+                });
+            }
+            populateFilterOptions('reportedServicesFilter', getUniqueValues(subset, 'Reported Services'));
+            updateReportedServicesCount();
+            filterReportedServices();
+        }
+
+        function populateFilters() {
+            // Student-side filters — always from full data, independent
+            populateFilterOptions('majorFilter',                  getUniqueValues(studentData, 'MAJOR'));
+            populateFilterOptions('advisingOfficeFilter',         getUniqueValues(studentData, 'Advising Office'));
+            populateFilterOptions('academicDepartmentFilter',     getUniqueValues(studentData, 'Academic Department'));
+            populateFilterOptions('predictedSupportLevelFilter',  getUniqueValues(studentData, 'Predicted Support Level'));
+
+            // Appointment-side filters — full data on initial load
+            populateFilterOptions('careUnitFilter',               getUniqueValues(appointmentData, 'Care Unit'));
+            populateFilterOptions('locationFilter',               getUniqueValues(appointmentData, 'Location'));
+            populateFilterOptions('reportedMeetingTypeFilter',    getUniqueValues(appointmentData, 'Reported Meeting Type'));
+            populateFilterOptions('appointmentTypeFilter',        getUniqueValues(appointmentData, 'Appointment Type'));
+            populateFilterOptions('sourceFilter',                 getUniqueValues(appointmentData, 'Source'));
+
+            const rawServiceStrings = new Set();
+            appointmentData.forEach(function(row) {
+                const value = row['Reported Services'];
+                if (value && value.toString().trim() !== '') {
+                    rawServiceStrings.add(value.toString().trim());
+                }
+            });
+            const individualServices = getUniqueValues(appointmentData, 'Reported Services');
+            console.log('Reported Services: Reduced from ' + rawServiceStrings.size + ' combinations to ' + individualServices.length + ' unique individual services');
+            if (rawServiceStrings.size > 100 && individualServices.length < rawServiceStrings.size / 2) {
+                showSuccess('Smart parsing reduced Reported Services from ' + rawServiceStrings.size + ' combinations to ' + individualServices.length + ' individual services!');
+            }
+            populateFilterOptions('reportedServicesFilter', individualServices);
+
+            updateReportedServicesCount();
+            filterReportedServices();
+
+            // ── Cascading event listeners ─────────────────────────────────────
+            // Care Unit → cascades Location, Source, Services
+            var careUnitSelect = document.getElementById('careUnitFilter');
+            careUnitSelect.addEventListener('change', function() {
+                cascadeFromCareUnit();
+                applyFilters();
+            });
+
+            // Location → cascades Services
+            var locationSelect = document.getElementById('locationFilter');
+            locationSelect.addEventListener('change', function() {
+                cascadeFromLocation();
+                applyFilters();
+            });
+
+            // Services — update count on change
+            var reportedServicesSelect = document.getElementById('reportedServicesFilter');
+            if (reportedServicesSelect) {
+                reportedServicesSelect.addEventListener('change', function() {
+                    updateReportedServicesCount();
+                    applyFilters();
+                });
+            }
+
+            // All other filters fire applyFilters directly (no cascade needed)
+            var otherSelects = document.querySelectorAll(
+                '.filter-select:not(#careUnitFilter):not(#locationFilter):not(#reportedServicesFilter)'
+            );
+            for (var i = 0; i < otherSelects.length; i++) {
+                otherSelects[i].addEventListener('change', applyFilters);
+            }
+        }
+
         let appointmentFiltersActive = false;
+
+        // Parse a Navigate date string (MM/DD/YYYY or YYYY-MM-DD) to a comparable Date
+        function parseDateForFilter(dateStr) {
+            if (!dateStr) return null;
+            var s = dateStr.toString().trim().split(' ')[0]; // strip time portion
+            // MM/DD/YYYY
+            var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) return new Date(parseInt(m[3]), parseInt(m[1])-1, parseInt(m[2]));
+            // YYYY-MM-DD (from date input)
+            var m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m2) return new Date(parseInt(m2[1]), parseInt(m2[2])-1, parseInt(m2[3]));
+            return null;
+        }
+
+        function clearDateFilter() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value   = '';
+            applyFilters();
+        }
+        window.clearDateFilter = clearDateFilter;
 
         function applyFilters() {
             const majorFilter = getSelectedValues('majorFilter');
@@ -2607,6 +3050,23 @@
             const appointmentTypeFilter = getSelectedValues('appointmentTypeFilter');
             const sourceFilter = getSelectedValues('sourceFilter');
             const reportedServicesFilter = getSelectedValues('reportedServicesFilter');
+
+            // Date range
+            var dateFromVal = document.getElementById('dateFrom').value;
+            var dateToVal   = document.getElementById('dateTo').value;
+            var dateFrom = dateFromVal ? parseDateForFilter(dateFromVal) : null;
+            var dateTo   = dateToVal   ? parseDateForFilter(dateToVal)   : null;
+            // Set dateTo to end of day
+            if (dateTo) dateTo.setHours(23, 59, 59, 999);
+
+            function inDateRange(dateStr) {
+                if (!dateFrom && !dateTo) return true;
+                var d = parseDateForFilter(dateStr);
+                if (!d) return true; // can't parse → don't exclude
+                if (dateFrom && d < dateFrom) return false;
+                if (dateTo   && d > dateTo)   return false;
+                return true;
+            }
 
             appointmentFiltersActive = (
                 locationFilter.length > 0 ||
@@ -2640,11 +3100,15 @@
                     });
                     if (!hasMatchingService) return false;
                 }
+                // Date range — use Reported Start Date for all appointment/check-in records
+                if (!inDateRange(appointment['Reported Start Date'])) return false;
                 return true;
             });
 
             filteredEventData = eventData.filter(function(event) {
                 if (careUnitFilter.length > 0 && careUnitFilter.indexOf(event['Care Unit']) === -1) return false;
+                // Date range — use Event Start Date/Time
+                if (!inDateRange(event['Event Start Date/Time'])) return false;
                 return true;
             });
 
@@ -2663,6 +3127,8 @@
         function resetAllFilters() {
             const filterSelects = document.querySelectorAll('.filter-select');
             filterSelects.forEach(function(select) { select.selectedIndex = -1; });
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value   = '';
             applyFilters();
         }
 
