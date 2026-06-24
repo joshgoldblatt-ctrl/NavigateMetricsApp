@@ -1,12 +1,18 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      5.8
+  Version:      5.9
   Released:     June 24, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v5.9  2026-06-24
+    - Transfer Support category rule updated: now triggers on Care Unit =
+      "Transfer" OR "Transfer Support" (any location, all record types);
+      removed location requirement ("Transfer Engagement Initiative (TEI)")
+      which was preventing events from being counted since event locations
+      are room numbers rather than care unit locations
   v5.8  2026-06-24
     - Advising category: removed location restriction — any record with Care
       Unit = "Advising" now counts regardless of location
@@ -141,7 +147,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 5.8</title>
+    <title>Navigate Student Engagement Metrics App - Version 5.9</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -1022,11 +1028,19 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App_V5.8</h1>
-            <div class="subtitle">Version 5.8 - Released June 24, 2026</div>
+            <h1>📚 Navigate Student Engagement Metrics App_V5.9</h1>
+            <div class="subtitle">Version 5.9 - Released June 24, 2026</div>
             <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 5.9</div>
+                    <div class="version-date">June 24, 2026</div>
+                    <ul class="version-changes">
+                        <li>Transfer Support category rule updated: now triggers on Care Unit = "Transfer" OR "Transfer Support" (any location, applies to appointments, check-ins, and events equally); removed the location requirement which was preventing events from counting since event locations are room numbers</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 5.8</div>
@@ -1634,9 +1648,10 @@
                     <!-- Transfer Support Category -->
                     <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
                         <h3 style="color: #7c3aed; font-size: 18px; margin-bottom: 15px;">🔄 Transfer Support Engagement</h3>
-                        <div style="background: #f5f3ff; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                            <strong style="color: #5b21b6;">Appointment & Event Rule:</strong> Care Unit = "Transfer" AND Location = "Transfer Engagement Initiative (TEI)"
+                        <div style="background: #f5f3ff; padding: 12px; border-radius: 5px;">
+                            <strong style="color: #5b21b6;">Appointment, Check-in & Event Rule:</strong> Care Unit = "Transfer" OR "Transfer Support" (any location)
                         </div>
+                        <p style="margin-top: 10px; color: #718096; font-size: 13px;">Location is not used for this category — event locations are room numbers and would not match a fixed location string.</p>
                     </div>
                 </div>
                 
@@ -4137,7 +4152,7 @@
         function isEnrollmentAppointment(careUnit) { return careUnit === 'Enrollment'; }
         function isPayingForCollegeAppointment(careUnit) { return careUnit === 'Paying for College'; }
         function isAcademicDeptsAppointment(careUnit) { return careUnit === 'Academic Departments & Library' || careUnit === 'Physical Therapist Assistant Program'; }
-        function isTransferSupportAppointment(careUnit, location) { return careUnit === 'Transfer' && location === 'Transfer Engagement Initiative (TEI)'; }
+        function isTransferSupportAppointment(careUnit, location) { return careUnit === 'Transfer' || careUnit === 'Transfer Support'; }
 
         // ─── Shared CSV download helper ──────────────────────────────────────────
         function downloadCSV(rows, filename) {
@@ -4720,7 +4735,7 @@
                 if (serviceStrings.size > 0) content += '<p>Reduction: <strong>' + Math.round((1 - individualServices.length / serviceStrings.size) * 100) + '%</strong></p>';
                 content += '</div>';
 
-                content += '<div class="diagnostic-section" style="background: #f5f3ff; padding: 15px; border-radius: 5px; margin-top: 15px;"><h3>📖 Category Rules Reference</h3><ul style="font-size: 13px; margin-left: 20px; line-height: 1.8;"><li><strong>Advising:</strong> Care Unit = "Advising" (any location)</li><li><strong>Career Services:</strong> Care Unit = "Career Services"</li><li><strong>Tutoring:</strong> Care Unit = "Tutoring & Technology" + approved Location</li><li><strong>FYS, ePortfolio & Technology Support:</strong> Care Unit = "Tutoring & Technology" + Location is ePortfolio Assistance, FYS Student Success Hub, or Student Technology Mentors</li><li><strong>Campus Life:</strong> Care Unit = "Campus Life" OR "LaGuardia Cares" OR Location = "CUNY Edge" OR "VP of Student Affairs"</li><li><strong>Athletics & Recreation:</strong> Location = "Athletics & Recreation" (any Care Unit)</li><li><strong>Enrollment:</strong> Care Unit = "Enrollment"</li><li><strong>Paying for College:</strong> Care Unit = "Paying for College"</li><li><strong>Academic Depts & Library:</strong> Care Unit = "Academic Departments & Library"</li><li><strong>Transfer Support:</strong> Care Unit = "Transfer" AND Location = "Transfer Engagement Initiative (TEI)"</li></ul></div></div>';
+                content += '<div class="diagnostic-section" style="background: #f5f3ff; padding: 15px; border-radius: 5px; margin-top: 15px;"><h3>📖 Category Rules Reference</h3><ul style="font-size: 13px; margin-left: 20px; line-height: 1.8;"><li><strong>Advising:</strong> Care Unit = "Advising" (any location)</li><li><strong>Career Services:</strong> Care Unit = "Career Services"</li><li><strong>Tutoring:</strong> Care Unit = "Tutoring & Technology" + approved Location</li><li><strong>FYS, ePortfolio & Technology Support:</strong> Care Unit = "Tutoring & Technology" + Location is ePortfolio Assistance, FYS Student Success Hub, or Student Technology Mentors</li><li><strong>Campus Life:</strong> Care Unit = "Campus Life" OR "LaGuardia Cares" OR Location = "CUNY Edge" OR "VP of Student Affairs"</li><li><strong>Athletics & Recreation:</strong> Location = "Athletics & Recreation" (any Care Unit)</li><li><strong>Enrollment:</strong> Care Unit = "Enrollment"</li><li><strong>Paying for College:</strong> Care Unit = "Paying for College"</li><li><strong>Academic Depts & Library:</strong> Care Unit = "Academic Departments & Library"</li><li><strong>Transfer Support:</strong> Care Unit = "Transfer" OR "Transfer Support" (any location)</li></ul></div></div>';
 
                 document.getElementById('diagnosticContent').innerHTML = content;
                 document.getElementById('diagnosticModal').style.display = 'block';
