@@ -1,12 +1,22 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      5.6
-  Released:     June 4, 2026
+  Version:      5.7
+  Released:     June 23, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v5.7  2026-06-23
+    - Removed Student Index from both Tableau exports; Student ID is now the
+      join key between Tableau Engagement Records and Tableau Student Roster
+    - Tableau Engagement Records: added Appointment Created By (blank for
+      check-ins, CARES cases, events); added Earned Credits, Cumulative GPA,
+      and Academic Department from roster for enrolled students (blank for
+      unenrolled)
+    - Removed buildStudentIndexMap() function and all calls to it
+    - Removed Data Dictionary warning about not uploading Student Name/Student ID
+      to Tableau
   v5.6  2026-06-04
     - Cascading filters: selecting Care Unit now repopulates Location, Reported
       Services, and Source to only show values present in matching records;
@@ -119,7 +129,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 5.6</title>
+    <title>Navigate Student Engagement Metrics App - Version 5.7</title>
     
     <!-- External Libraries with specific versions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -1000,15 +1010,21 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Navigate Student Engagement Metrics App</h1>
-            <div style="margin-top: 8px; font-size: 13px; color: #4a5568; line-height: 1.8;">
-                <strong>App:</strong> Navigate Student Engagement Metrics App<br>
-                <strong>Version:</strong> 5.6<br>
-                <strong>Released:</strong> June 4, 2026<br>
-                <strong>Developed by:</strong> Josh Goldblatt using Claude
-            </div>
+            <h1>📚 Navigate Student Engagement Metrics App_V5.7</h1>
+            <div class="subtitle">Version 5.7 - Released June 23, 2026</div>
+            <div class="subtitle">Developed by Josh Goldblatt using Claude</div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 5.7</div>
+                    <div class="version-date">June 23, 2026</div>
+                    <ul class="version-changes">
+                        <li>Removed Student Index from both Tableau exports — Student ID is now the join key between Engagement Records and Student Roster</li>
+                        <li>Tableau Engagement Records: added Appointment Created By (blank for check-ins, CARES cases, and events); added Earned Credits, Cumulative GPA, and Academic Department from roster for enrolled students</li>
+                        <li>Removed warning about not uploading Student Name/Student ID to Tableau</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 5.6</div>
@@ -1604,7 +1620,7 @@
                         <li>Filters apply to both the source data and the categorization results</li>
                         <li>Event categorization is <strong>case-insensitive</strong> (e.g., "ADVISING" and "advising" are treated the same)</li>
                         <li>The <strong>Source</strong> column is now auto-generated: "Appointment" for appointment records, "Check-in" for check-in records, "CARES Case" for LaGuardia Cares cases</li>
-                        <li><strong>Tableau Exports:</strong> The Engagement Records and Student Roster exports share a matching Student Index column. Do NOT upload Student Name or Student ID to Tableau — use the Student Index for joining.</li>
+                        <li><strong>Tableau Exports:</strong> The Engagement Records and Student Roster exports join on Student ID. Use Student ID as the join key when setting up the relationship in Tableau.</li>
                     </ul>
                 </div>
             </div>
@@ -4086,20 +4102,6 @@
             document.body.removeChild(link);
         }
 
-        // ─── Build student index map ─────────────────────────────────────────────
-        function buildStudentIndexMap() {
-            const allStudentIds = new Set();
-            filteredAppointmentData.forEach(function(a) { if (a['Student ID']) allStudentIds.add(a['Student ID'].toString().trim()); });
-            if (!appointmentFiltersActive && hasEventsData) {
-                filteredEventData.forEach(function(e) { if (e['Student ID']) allStudentIds.add(e['Student ID'].toString().trim()); });
-            }
-            filteredStudentData.forEach(function(s) { if (s['Student ID']) allStudentIds.add(s['Student ID'].toString().trim()); });
-            const sortedIds = Array.from(allStudentIds).sort();
-            const indexMap = {};
-            sortedIds.forEach(function(id, i) { indexMap[id] = i + 1; });
-            return indexMap;
-        }
-
         function getRecordCategories(careUnit, location) {
             var cats = [];
             if (isAdvisingAppointment(careUnit, location)) cats.push('Advising');
@@ -4117,12 +4119,20 @@
         function exportTableauEngagement() {
             try {
                 const semesterLabel = getSemesterLabel();
-                const indexMap = buildStudentIndexMap();
                 const enrolledStudentIds = new Set();
                 filteredStudentData.forEach(function(s) { enrolledStudentIds.add(s['Student ID']); });
+                // Expanded roster attribute map — all demographic fields
                 const studentAttrMap = {};
                 filteredStudentData.forEach(function(s) {
-                    studentAttrMap[s['Student ID']] = { 'Student Type': s['Student Type'] || '', 'Advising Office': s['Advising Office'] || '', 'Predicted Support Level': s['Predicted Support Level'] || '', 'Major': s['MAJOR'] || '' };
+                    studentAttrMap[s['Student ID']] = {
+                        'Student Type':           s['Student Type'] || '',
+                        'Advising Office':         s['Advising Office'] || '',
+                        'Predicted Support Level': s['Predicted Support Level'] || '',
+                        'Major':                   s['MAJOR'] || '',
+                        'Earned Credits':          s['Earned Credits'] || '',
+                        'Cumulative GPA':          s['Cumulative GPA'] || '',
+                        'Academic Department':     s['Academic Department'] || ''
+                    };
                 });
                 const reportDate = new Date().toLocaleDateString('en-US');
                 const rows = [];
@@ -4134,31 +4144,34 @@
                     const isEnrolled = enrolledStudentIds.has(sid);
                     const attrs = studentAttrMap[sid] || {};
                     rows.push({
-                        'Student Index': indexMap[sid] || '',
-                        'Student Name': a['Student Name'] || '',
-                        'Student ID': sid,
-                        'Enrolled': isEnrolled ? 'Yes' : 'No',
-                        'Student Type': isEnrolled ? attrs['Student Type'] : '',
-                        'Advising Office': isEnrolled ? attrs['Advising Office'] : '',
+                        'Student Name':            a['Student Name'] || '',
+                        'Student ID':              sid,
+                        'Enrolled':                isEnrolled ? 'Yes' : 'No',
+                        'Student Type':            isEnrolled ? attrs['Student Type'] : '',
+                        'Advising Office':         isEnrolled ? attrs['Advising Office'] : '',
                         'Predicted Support Level': isEnrolled ? attrs['Predicted Support Level'] : '',
-                        'Major': isEnrolled ? attrs['Major'] : '',
-                        'Source': a['Source'] || 'Appointment',
-                        'Assigned Category': getRecordCategories(careUnit, location),
-                        'Care Unit': careUnit,
-                        'Location': location,
-                        'Engagement Date': a['Reported Start Date'] || '',
-                        'Reported Services': a['Reported Services'] || '',
-                        'Reported Course Name': a['Reported Course Name'] || '',
-                        'Courses Course Number': a['Reported Course Number'] || a['Courses Course Number'] || '',
-                        'Reported Meeting Type': a['Reported Meeting Type'] || '',
-                        'Appointment Type': a['Appointment Type'] || '',
-                        'Reported Start Date': a['Reported Start Date'] || '',
-                        'Event Display Name': '',
-                        'Event Location Name': '',
-                        'Event Start Date/Time': '',
-                        'Opened At Date': a['Source'] === 'CARES Case' ? (a['Reported Start Date'] || '') : '',
-                        'Semester': semesterLabel,
-                        'Report Date': reportDate
+                        'Major':                   isEnrolled ? attrs['Major'] : '',
+                        'Earned Credits':          isEnrolled ? attrs['Earned Credits'] : '',
+                        'Cumulative GPA':          isEnrolled ? attrs['Cumulative GPA'] : '',
+                        'Academic Department':     isEnrolled ? attrs['Academic Department'] : '',
+                        'Source':                  a['Source'] || 'Appointment',
+                        'Assigned Category':       getRecordCategories(careUnit, location),
+                        'Care Unit':               careUnit,
+                        'Location':                location,
+                        'Engagement Date':         a['Reported Start Date'] || '',
+                        'Appointment Created By':  a['Source'] === 'Check-in' || a['Source'] === 'CARES Case' ? '' : (a['Appointment Created By'] || ''),
+                        'Reported Services':       a['Reported Services'] || '',
+                        'Reported Course Name':    a['Reported Course Name'] || '',
+                        'Courses Course Number':   a['Reported Course Number'] || a['Courses Course Number'] || '',
+                        'Reported Meeting Type':   a['Reported Meeting Type'] || '',
+                        'Appointment Type':        a['Appointment Type'] || '',
+                        'Reported Start Date':     a['Reported Start Date'] || '',
+                        'Event Display Name':      '',
+                        'Event Location Name':     '',
+                        'Event Start Date/Time':   '',
+                        'Opened At Date':          a['Source'] === 'CARES Case' ? (a['Reported Start Date'] || '') : '',
+                        'Semester':                semesterLabel,
+                        'Report Date':             reportDate
                     });
                 });
 
@@ -4170,31 +4183,34 @@
                         const isEnrolled = enrolledStudentIds.has(sid);
                         const attrs = studentAttrMap[sid] || {};
                         rows.push({
-                            'Student Index': indexMap[sid] || '',
-                            'Student Name': e['Student Name'] || '',
-                            'Student ID': sid,
-                            'Enrolled': isEnrolled ? 'Yes' : 'No',
-                            'Student Type': isEnrolled ? attrs['Student Type'] : '',
-                            'Advising Office': isEnrolled ? attrs['Advising Office'] : '',
+                            'Student Name':            e['Student Name'] || '',
+                            'Student ID':              sid,
+                            'Enrolled':                isEnrolled ? 'Yes' : 'No',
+                            'Student Type':            isEnrolled ? attrs['Student Type'] : '',
+                            'Advising Office':         isEnrolled ? attrs['Advising Office'] : '',
                             'Predicted Support Level': isEnrolled ? attrs['Predicted Support Level'] : '',
-                            'Major': isEnrolled ? attrs['Major'] : '',
-                            'Source': 'Event',
-                            'Assigned Category': getRecordCategories(careUnit, location),
-                            'Care Unit': careUnit,
-                            'Location': location,
-                            'Engagement Date': e['Event Start Date/Time'] || '',
-                            'Reported Services': '',
-                            'Reported Course Name': '',
-                            'Courses Course Number': '',
-                            'Reported Meeting Type': '',
-                            'Appointment Type': '',
-                            'Reported Start Date': '',
-                            'Event Display Name': e['Event Display Name'] || '',
-                            'Event Location Name': e['Event Location Name'] || '',
-                            'Event Start Date/Time': e['Event Start Date/Time'] || '',
-                            'Opened At Date': '',
-                            'Semester': semesterLabel,
-                            'Report Date': reportDate
+                            'Major':                   isEnrolled ? attrs['Major'] : '',
+                            'Earned Credits':          isEnrolled ? attrs['Earned Credits'] : '',
+                            'Cumulative GPA':          isEnrolled ? attrs['Cumulative GPA'] : '',
+                            'Academic Department':     isEnrolled ? attrs['Academic Department'] : '',
+                            'Source':                  'Event',
+                            'Assigned Category':       getRecordCategories(careUnit, location),
+                            'Care Unit':               careUnit,
+                            'Location':                location,
+                            'Engagement Date':         e['Event Start Date/Time'] || '',
+                            'Appointment Created By':  '',
+                            'Reported Services':       '',
+                            'Reported Course Name':    '',
+                            'Courses Course Number':   '',
+                            'Reported Meeting Type':   '',
+                            'Appointment Type':        '',
+                            'Reported Start Date':     '',
+                            'Event Display Name':      e['Event Display Name'] || '',
+                            'Event Location Name':     e['Event Location Name'] || '',
+                            'Event Start Date/Time':   e['Event Start Date/Time'] || '',
+                            'Opened At Date':          '',
+                            'Semester':                semesterLabel,
+                            'Report Date':             reportDate
                         });
                     });
                 }
@@ -4220,7 +4236,6 @@
         function exportTableauStudentRoster() {
             try {
                 const semesterLabel = getSemesterLabel();
-                const indexMap = buildStudentIndexMap();
                 const enrolledStudentIds = new Set();
                 filteredStudentData.forEach(function(s) { enrolledStudentIds.add(s['Student ID']); });
                 const enrolledAppointments = filteredAppointmentData.filter(function(a) { return enrolledStudentIds.has(a['Student ID']); });
@@ -4253,9 +4268,8 @@
                     const sid = student['Student ID'];
                     const eng = studentEngagementMap[sid] || {};
                     return {
-                        'Student Index': indexMap[sid] || '',
-                        'Student Name': resolveStudentName(student),
-                        'Student ID': sid,
+                        'Student Name':                              resolveStudentName(student),
+                        'Student ID':                               sid,
                         'Advising Office': student['Advising Office'] || '',
                         'Cumulative GPA': student['Cumulative GPA'] || '',
                         'Earned Credits': student['Earned Credits'] || '',
