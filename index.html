@@ -1,12 +1,22 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      6.0
-  Released:     June 24, 2026
+  Version:      6.1
+  Released:     June 25, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v6.1  2026-06-25
+    - Advising rule updated: Location = "CUNY Edge" excluded from Advising
+      categorization — CUNY Edge falls under Campus Life/Student Affairs division
+      and should not double-count as Advising (1,048 affected records in SP25)
+    - VP of Student Affairs location now always triggers Campus Life/Student
+      Affairs category regardless of Care Unit; original Care Unit preserved
+      in exports
+    - "Campus Life" category renamed to "Campus Life/Student Affairs" everywhere:
+      score cards, tables, exports, Data Dictionary, diagnostic modal, Tableau
+      engagement flags, category function, contributions config
   v6.0  2026-06-24
     - Full visual design overhaul: warm paper background, white card surfaces,
       Fraunces display font for headings and stat numbers, Source Sans 3 for
@@ -167,7 +177,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 6.0</title>
+    <title>Navigate Student Engagement Metrics App - Version 6.1</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -747,13 +757,23 @@ tr:hover td { background: var(--paper); }
                     <p class="subtitle">Processes Navigate exports to calculate student engagement</p>
                 </div>
                 <div class="meta-box">
-                    <b>Version</b>      <span>6.0</span>
-                    <b>Released</b>     <span>June 24, 2026</span>
+                    <b>Version</b>      <span>6.1</span>
+                    <b>Released</b>     <span>June 25, 2026</span>
                     <b>Developed by</b> <span>Josh Goldblatt using Claude</span>
                 </div>
             </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.1</div>
+                    <div class="version-date">June 25, 2026</div>
+                    <ul class="version-changes">
+                        <li>Advising rule updated: Location = "CUNY Edge" now excluded from Advising — it falls under Campus Life/Student Affairs division and was previously double-counting 1,048 records in SP25</li>
+                        <li>VP of Student Affairs location now always triggers Campus Life/Student Affairs category regardless of Care Unit; original Care Unit value preserved in exports</li>
+                        <li>"Campus Life" renamed to "Campus Life/Student Affairs" across all score cards, tables, exports, Data Dictionary, diagnostic modal, and Tableau flags</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 6.0</div>
@@ -1337,15 +1357,15 @@ tr:hover td { background: var(--paper); }
                         <p style="margin-top: 10px; color: #718096; font-size: 13px;">Events do not currently contribute to this category</p>
                     </div>
 
-                    <!-- Campus Life Category -->
+                    <!-- Campus Life/Student Affairs Category -->
                     <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #f43f5e; font-size: 18px; margin-bottom: 15px;">🏫 Campus Life Engagement</h3>
+                        <h3 style="color: #f43f5e; font-size: 18px; margin-bottom: 15px;">🏫 Campus Life/Student Affairs/Student Affairs Engagement</h3>
                         <div style="background: #fef2f2; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
                             <strong style="color: #881337;">Appointment Rules (ANY of these):</strong>
                         </div>
                         <ul style="list-style-type: none; padding: 0; margin-bottom: 15px;">
                             <li style="padding: 8px 12px; background: #fee; border-left: 3px solid #f43f5e; margin-bottom: 8px; font-size: 14px;">
-                                <strong>Option 1:</strong> Care Unit = "Campus Life"
+                                <strong>Option 1:</strong> Care Unit = "Campus Life" <em style="color:#718096;">(raw Navigate Care Unit value)</em>
                             </li>
                             <li style="padding: 8px 12px; background: #fee; border-left: 3px solid #f43f5e; margin-bottom: 8px; font-size: 14px;">
                                 <strong>Option 2:</strong> Location = "CUNY Edge" <em style="color: #9f1239;">(regardless of Care Unit)</em>
@@ -1358,7 +1378,7 @@ tr:hover td { background: var(--paper); }
                             </li>
                         </ul>
                         <div style="background: #fce7f3; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #831843;">Event Rule:</strong> Care Unit = "Campus Life" (case-insensitive)
+                            <strong style="color: #831843;">Event Rule:</strong> Care Unit = "Campus Life" (raw Navigate value, case-insensitive)
                         </div>
                     </div>
 
@@ -1564,7 +1584,7 @@ tr:hover td { background: var(--paper); }
                             <th>Career</th>
                             <th>Tutoring</th>
                             <th>FYS, ePortfolio & Tech</th>
-                            <th>Campus Life</th>
+                            <th>Campus Life/Student Affairs</th>
                             <th>Athletics & Rec</th>
                             <th>Enrollment</th>
                             <th>Paying for College</th>
@@ -3086,7 +3106,7 @@ tr:hover td { background: var(--paper); }
                 { title: 'Career Services', value: studentsWithCareer.size, percentage: totalStudents > 0 ? (studentsWithCareer.size / totalStudents * 100).toFixed(1) : 0 },
                 { title: 'Tutoring', value: studentsWithTutoring.size, percentage: totalStudents > 0 ? (studentsWithTutoring.size / totalStudents * 100).toFixed(1) : 0 },
                 { title: 'FYS, ePortfolio & Technology Support', value: studentsWithFYSTech.size, percentage: totalStudents > 0 ? (studentsWithFYSTech.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Campus Life', value: studentsWithCampusLife.size, percentage: totalStudents > 0 ? (studentsWithCampusLife.size / totalStudents * 100).toFixed(1) : 0 },
+                { title: 'Campus Life/Student Affairs', value: studentsWithCampusLife.size, percentage: totalStudents > 0 ? (studentsWithCampusLife.size / totalStudents * 100).toFixed(1) : 0 },
                 { title: 'Athletics & Recreation', value: studentsWithAthletics.size, percentage: totalStudents > 0 ? (studentsWithAthletics.size / totalStudents * 100).toFixed(1) : 0 },
                 { title: 'Enrollment', value: studentsWithEnrollment.size, percentage: totalStudents > 0 ? (studentsWithEnrollment.size / totalStudents * 100).toFixed(1) : 0 },
                 { title: 'Paying for College', value: studentsWithPayingForCollege.size, percentage: totalStudents > 0 ? (studentsWithPayingForCollege.size / totalStudents * 100).toFixed(1) : 0 },
@@ -3212,7 +3232,7 @@ tr:hover td { background: var(--paper); }
                 { name: 'Career Services', check: function(cu) { return isCareerAppointment(cu); } },
                 { name: 'Tutoring', check: function(cu, loc) { return isTutoringAppointment(cu, loc); } },
                 { name: 'FYS, ePortfolio & Technology Support', check: function(cu, loc) { return isFYSTechAppointment(cu, loc); } },
-                { name: 'Campus Life', check: function(cu, loc) { return isCampusLifeAppointment(cu, loc); } },
+                { name: 'Campus Life/Student Affairs', check: function(cu, loc) { return isCampusLifeAppointment(cu, loc); } },
                 { name: 'Athletics & Recreation', check: function(cu, loc) { return isAthleticsAppointment(cu, loc); } },
                 { name: 'Enrollment', check: function(cu) { return isEnrollmentAppointment(cu); } },
                 { name: 'Paying for College', check: function(cu) { return isPayingForCollegeAppointment(cu); } },
@@ -3361,7 +3381,7 @@ tr:hover td { background: var(--paper); }
             var header = ['Category'];
             bucketLabels.forEach(function(label) { header.push(label + ' (#)'); header.push(label + ' (%)'); });
             var rows = [header];
-            var categoryOrder = ['Any', 'Advising', 'Career Services', 'Tutoring', 'FYS, ePortfolio & Technology Support', 'Campus Life', 'Athletics & Recreation', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
+            var categoryOrder = ['Any', 'Advising', 'Career Services', 'Tutoring', 'FYS, ePortfolio & Technology Support', 'Campus Life/Student Affairs', 'Athletics & Recreation', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
             categoryOrder.forEach(function(catName) {
                 var bucketCounts = window.meetingFrequencyData[catName];
                 if (!bucketCounts) return;
@@ -3494,7 +3514,7 @@ tr:hover td { background: var(--paper); }
                     return enrolledStudentIds.has(e['Student ID']) && e['Event Start Date/Time'];
                 });
                 const monthlyData = {};
-                const categoryKeys = ['Any', 'Advising', 'Career', 'Tutoring', 'FYS Tech', 'Campus Life', 'Athletics', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
+                const categoryKeys = ['Any', 'Advising', 'Career', 'Tutoring', 'FYS Tech', 'Campus Life/Student Affairs', 'Athletics', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
 
                 function ensureMonth(key) {
                     if (!monthlyData[key]) {
@@ -3509,7 +3529,7 @@ tr:hover td { background: var(--paper); }
                     if (isCareerAppointment(careUnit)) monthlyData[monthKey].Career.add(studentId);
                     if (isTutoringAppointment(careUnit, location)) monthlyData[monthKey].Tutoring.add(studentId);
                     if (isFYSTechAppointment(careUnit, location)) monthlyData[monthKey]['FYS Tech'].add(studentId);
-                    if (isCampusLifeAppointment(careUnit, location)) monthlyData[monthKey]['Campus Life'].add(studentId);
+                    if (isCampusLifeAppointment(careUnit, location)) monthlyData[monthKey]['Campus Life/Student Affairs'].add(studentId);
                     if (isAthleticsAppointment(careUnit, location)) monthlyData[monthKey].Athletics.add(studentId);
                     if (isEnrollmentAppointment(careUnit)) monthlyData[monthKey].Enrollment.add(studentId);
                     if (isPayingForCollegeAppointment(careUnit)) monthlyData[monthKey]['Paying for College'].add(studentId);
@@ -3547,7 +3567,7 @@ tr:hover td { background: var(--paper); }
                 });
 
                 const sortedMonths = Object.keys(monthlyData).sort();
-                const engagementTypes = ['Any', 'Advising', 'Career', 'Tutoring', 'FYS Tech', 'Campus Life', 'Athletics', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
+                const engagementTypes = ['Any', 'Advising', 'Career', 'Tutoring', 'FYS Tech', 'Campus Life/Student Affairs', 'Athletics', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
                 const colors = ['#22253a','#b5482e','#2e6e72','#c8922c','#3f7d57','#9c3c25','#235658','#8a6516','#336347','#565b76','#8b8fa6'];
                 const datasets = engagementTypes.map(function(type, index) {
                     return { label: type, data: sortedMonths.map(function(month) { return monthlyData[month][type].size; }), borderColor: colors[index], backgroundColor: colors[index].replace('1)', '0.2)'), borderWidth: 2, tension: 0.1 };
@@ -3728,7 +3748,7 @@ tr:hover td { background: var(--paper); }
 
             function ensureLocation(location) {
                 if (!locationData[location]) {
-                    locationData[location] = { students: new Set(), appointments: 0, checkins: 0, events: 0, categories: { 'Advising': new Set(), 'Career Services': new Set(), 'Tutoring': new Set(), 'FYS, ePortfolio & Technology Support': new Set(), 'Campus Life': new Set(), 'Athletics & Recreation': new Set(), 'Enrollment': new Set(), 'Paying for College': new Set(), 'Academic Depts & Library': new Set(), 'Transfer Support': new Set() } };
+                    locationData[location] = { students: new Set(), appointments: 0, checkins: 0, events: 0, categories: { 'Advising': new Set(), 'Career Services': new Set(), 'Tutoring': new Set(), 'FYS, ePortfolio & Technology Support': new Set(), 'Campus Life/Student Affairs': new Set(), 'Athletics & Recreation': new Set(), 'Enrollment': new Set(), 'Paying for College': new Set(), 'Academic Depts & Library': new Set(), 'Transfer Support': new Set() } };
                 }
             }
 
@@ -3737,7 +3757,7 @@ tr:hover td { background: var(--paper); }
                 if (isCareerAppointment(careUnit)) locationData[location].categories['Career Services'].add(studentId);
                 if (isTutoringAppointment(careUnit, location)) locationData[location].categories['Tutoring'].add(studentId);
                 if (isFYSTechAppointment(careUnit, location)) locationData[location].categories['FYS, ePortfolio & Technology Support'].add(studentId);
-                if (isCampusLifeAppointment(careUnit, location)) locationData[location].categories['Campus Life'].add(studentId);
+                if (isCampusLifeAppointment(careUnit, location)) locationData[location].categories['Campus Life/Student Affairs'].add(studentId);
                 if (isAthleticsAppointment(careUnit, location)) locationData[location].categories['Athletics & Recreation'].add(studentId);
                 if (isEnrollmentAppointment(careUnit)) locationData[location].categories['Enrollment'].add(studentId);
                 if (isPayingForCollegeAppointment(careUnit)) locationData[location].categories['Paying for College'].add(studentId);
@@ -3778,7 +3798,7 @@ tr:hover td { background: var(--paper); }
                 { name: 'Career Services', color: '#1d4ed8', bgColor: '#eff6ff' },
                 { name: 'Tutoring', color: '#b45309', bgColor: '#fffbeb' },
                 { name: 'FYS, ePortfolio & Technology Support', color: '#0369a1', bgColor: '#f0f9ff' },
-                { name: 'Campus Life', color: '#b91c1c', bgColor: '#fef2f2' },
+                { name: 'Campus Life/Student Affairs', color: '#b91c1c', bgColor: '#fef2f2' },
                 { name: 'Athletics & Recreation', color: '#15803d', bgColor: '#f0fdf4' },
                 { name: 'Enrollment', color: '#7c3aed', bgColor: '#faf5ff' },
                 { name: 'Paying for College', color: '#a16207', bgColor: '#fefce8' },
@@ -3849,7 +3869,7 @@ tr:hover td { background: var(--paper); }
             if (!window.contributionsData) { alert('No data to export.'); return; }
             const locationData = window.contributionsData;
             const rows = [['Category', 'Location', 'Unique Students', 'Appointments', 'Check-ins', 'Events', 'Total']];
-            const categoryOrder = ['Advising', 'Career Services', 'Tutoring', 'FYS, ePortfolio & Technology Support', 'Campus Life', 'Athletics & Recreation', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
+            const categoryOrder = ['Advising', 'Career Services', 'Tutoring', 'FYS, ePortfolio & Technology Support', 'Campus Life/Student Affairs', 'Athletics & Recreation', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
             categoryOrder.forEach(function(category) {
                 const contributingLocations = [];
                 Object.keys(locationData).forEach(function(location) {
@@ -3882,8 +3902,8 @@ tr:hover td { background: var(--paper); }
 
         // ─── Category checking functions ─────────────────────────────────────────
         function isAdvisingAppointment(careUnit, location) {
-            // Any record with Care Unit = "Advising" counts — no location restriction
-            return careUnit === 'Advising';
+            // CUNY Edge excluded — falls under Campus Life/Student Affairs division
+            return careUnit === 'Advising' && location !== 'CUNY Edge';
         }
         function isCareerAppointment(careUnit) { return careUnit === 'Career Services'; }
         function isTutoringAppointment(careUnit, location) {
@@ -3891,16 +3911,15 @@ tr:hover td { background: var(--paper); }
             return careUnit === 'Tutoring & Technology' && tutoringLocations.indexOf(location) !== -1;
         }
         function isFYSTechAppointment(careUnit, location) {
-            // New category: FYS, ePortfolio & Technology Support
             const fysLocations = ['ePortfolio Assistance', 'Student Technology Mentors', 'FYS Student Success Hub'];
             return careUnit === 'Tutoring & Technology' && fysLocations.indexOf(location) !== -1;
         }
         function isCampusLifeAppointment(careUnit, location) {
-            // Athletics & Recreation is now its own category — no longer excluded here
-            return careUnit === 'Campus Life' || location === 'CUNY Edge' || location === 'LaGuardia Cares' || location === 'VP of Student Affairs' || careUnit === 'LaGuardia Cares';
+            // Campus Life/Student Affairs: Care Unit = "Campus Life", CUNY Edge, LaGuardia Cares,
+            // VP of Student Affairs (always maps here regardless of Care Unit)
+            return careUnit === 'Campus Life/Student Affairs' || location === 'CUNY Edge' || location === 'LaGuardia Cares' || location === 'VP of Student Affairs' || careUnit === 'LaGuardia Cares';
         }
         function isAthleticsAppointment(careUnit, location) {
-            // New category: Athletics & Recreation
             return location === 'Athletics & Recreation';
         }
         function isEnrollmentAppointment(careUnit) { return careUnit === 'Enrollment'; }
@@ -3935,7 +3954,7 @@ tr:hover td { background: var(--paper); }
             if (isCareerAppointment(careUnit)) cats.push('Career Services');
             if (isTutoringAppointment(careUnit, location)) cats.push('Tutoring');
             if (isFYSTechAppointment(careUnit, location)) cats.push('FYS, ePortfolio & Technology Support');
-            if (isCampusLifeAppointment(careUnit, location)) cats.push('Campus Life');
+            if (isCampusLifeAppointment(careUnit, location)) cats.push('Campus Life/Student Affairs');
             if (isAthleticsAppointment(careUnit, location)) cats.push('Athletics & Recreation');
             if (isEnrollmentAppointment(careUnit)) cats.push('Enrollment');
             if (isPayingForCollegeAppointment(careUnit)) cats.push('Paying for College');
@@ -4113,7 +4132,7 @@ tr:hover td { background: var(--paper); }
                         'Had Career Services Engagement': eng.career ? 'Yes' : 'No',
                         'Had Tutoring Engagement': eng.tutoring ? 'Yes' : 'No',
                         'Had FYS ePortfolio & Technology Support Engagement': eng.fysTech ? 'Yes' : 'No',
-                        'Had Campus Life Engagement': eng.campusLife ? 'Yes' : 'No',
+                        'Had Campus Life/Student Affairs Engagement': eng.campusLife ? 'Yes' : 'No',
                         'Had Athletics & Recreation Engagement': eng.athletics ? 'Yes' : 'No',
                         'Had Enrollment Engagement': eng.enrollment ? 'Yes' : 'No',
                         'Had Paying for College Engagement': eng.payingForCollege ? 'Yes' : 'No',
@@ -4199,7 +4218,7 @@ tr:hover td { background: var(--paper); }
                     enhancedStudent['Had Career Services Engagement'] = engagementInfo.career ? 'Yes' : 'No';
                     enhancedStudent['Had Tutoring Engagement'] = engagementInfo.tutoring ? 'Yes' : 'No';
                     enhancedStudent['Had FYS ePortfolio & Technology Support Engagement'] = engagementInfo.fysTech ? 'Yes' : 'No';
-                    enhancedStudent['Had Campus Life Engagement'] = engagementInfo.campusLife ? 'Yes' : 'No';
+                    enhancedStudent['Had Campus Life/Student Affairs Engagement'] = engagementInfo.campusLife ? 'Yes' : 'No';
                     enhancedStudent['Had Athletics & Recreation Engagement'] = engagementInfo.athletics ? 'Yes' : 'No';
                     enhancedStudent['Had Enrollment Engagement'] = engagementInfo.enrollment ? 'Yes' : 'No';
                     enhancedStudent['Had Paying for College Engagement'] = engagementInfo.payingForCollege ? 'Yes' : 'No';
@@ -4356,7 +4375,7 @@ tr:hover td { background: var(--paper); }
                     ['Career Services', sets.career.size, pSet(sets.career), 'of total enrolled students'],
                     ['Tutoring', sets.tutoring.size, pSet(sets.tutoring), 'of total enrolled students'],
                     ['FYS, ePortfolio & Technology Support', sets.fysTech.size, pSet(sets.fysTech), 'of total enrolled students'],
-                    ['Campus Life', sets.campusLife.size, pSet(sets.campusLife), 'of total enrolled students'],
+                    ['Campus Life/Student Affairs', sets.campusLife.size, pSet(sets.campusLife), 'of total enrolled students'],
                     ['Athletics & Recreation', sets.athletics.size, pSet(sets.athletics), 'of total enrolled students'],
                     ['Enrollment', sets.enrollment.size, pSet(sets.enrollment), 'of total enrolled students'],
                     ['Paying for College', sets.payingForCollege.size, pSet(sets.payingForCollege), 'of total enrolled students'],
