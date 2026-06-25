@@ -17,6 +17,12 @@
     - "Campus Life" category renamed to "Campus Life/Student Affairs" everywhere:
       score cards, tables, exports, Data Dictionary, diagnostic modal, Tableau
       engagement flags, category function, contributions config
+    - BUG (fixed same version): rename script incorrectly changed careUnit
+      comparison from 'Campus Life' to 'Campus Life/Student Affairs' inside
+      isCampusLifeAppointment — raw Navigate Care Unit value is "Campus Life"
+      so Women's Center, Campus Life location, and BMEC were going to Uncategorized
+    - Athletics & Recreation re-excluded from Campus Life/Student Affairs —
+      Location = "Athletics & Recreation" counts only in its own category
   v6.0  2026-06-24
     - Full visual design overhaul: warm paper background, white card surfaces,
       Fraunces display font for headings and stat numbers, Source Sans 3 for
@@ -772,6 +778,8 @@ tr:hover td { background: var(--paper); }
                         <li>Advising rule updated: Location = "CUNY Edge" now excluded from Advising — it falls under Campus Life/Student Affairs division and was previously double-counting 1,048 records in SP25</li>
                         <li>VP of Student Affairs location now always triggers Campus Life/Student Affairs category regardless of Care Unit; original Care Unit value preserved in exports</li>
                         <li>"Campus Life" renamed to "Campus Life/Student Affairs" across all score cards, tables, exports, Data Dictionary, diagnostic modal, and Tableau flags</li>
+                        <li>Fixed: rename script had incorrectly changed raw Care Unit comparison in categorization function — Women's Center, Campus Life location, and BMEC were going to Uncategorized</li>
+                        <li>Athletics & Recreation re-excluded from Campus Life/Student Affairs — counts only in its own category</li>
                     </ul>
                 </div>
 
@@ -3915,9 +3923,11 @@ tr:hover td { background: var(--paper); }
             return careUnit === 'Tutoring & Technology' && fysLocations.indexOf(location) !== -1;
         }
         function isCampusLifeAppointment(careUnit, location) {
-            // Campus Life/Student Affairs: Care Unit = "Campus Life", CUNY Edge, LaGuardia Cares,
-            // VP of Student Affairs (always maps here regardless of Care Unit)
-            return careUnit === 'Campus Life/Student Affairs' || location === 'CUNY Edge' || location === 'LaGuardia Cares' || location === 'VP of Student Affairs' || careUnit === 'LaGuardia Cares';
+            // Campus Life/Student Affairs: Care Unit = "Campus Life" (raw Navigate value),
+            // CUNY Edge, LaGuardia Cares, VP of Student Affairs (always maps here regardless of Care Unit)
+            // Athletics & Recreation excluded — has its own category
+            if (location === 'Athletics & Recreation') return false;
+            return careUnit === 'Campus Life' || location === 'CUNY Edge' || location === 'LaGuardia Cares' || location === 'VP of Student Affairs' || careUnit === 'LaGuardia Cares';
         }
         function isAthleticsAppointment(careUnit, location) {
             return location === 'Athletics & Recreation';
