@@ -1,12 +1,51 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      6.1
-  Released:     June 25, 2026
+  Version:      6.3.1
+  Released:     June 26, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v6.3.1  2026-06-26
+    - CARES case records are now always assigned Care Unit = "Student Affairs"
+      and Location = "LaGuardia Cares" on load, so they categorize into the
+      Student Affairs Care Unit in all tabulations and are correctly identified
+      in the export files (previously the raw Care Unit passed through, which
+      could land cases in "Other").
+  v6.3  2026-06-26
+    - Updated canonical Care Unit list to match the renamed backend reports
+      (shifting from "&" to "and" and renaming several units). New list:
+      Academic Departments, Advising, Athletics and Recreation, Career Services,
+      Enrollment, First Year Seminar, ePortfolio and Technology, Paying for
+      College, Peer Advisor Academy, Student Affairs, Transfer, Tutoring.
+    - Removed from prior list: LaGuardia Cares, Physical Therapist Assistant
+      Program, Campus Life ("Campus Life" replaced by "Student Affairs"),
+      "Academic Departments & Library" → "Academic Departments", "Tutoring &
+      Technology" → "Tutoring". Athletics and Recreation and First Year Seminar,
+      ePortfolio and Technology are now their own backend Care Units.
+    - NOTE: Older semester files must be regenerated with the new Care Unit
+      names; any unrecognized Care Unit value falls into "Other".
+  v6.2  2026-06-25
+    - MAJOR categorization change: the app now categorizes strictly by the raw
+      Care Unit value in the uploaded files. All custom category logic removed —
+      no location-based rules, no combining of Care Units, no renaming.
+    - Fixed canonical Care Unit list (alphabetical): Academic Departments &
+      Library, Advising, Campus Life, Career Services, Enrollment, LaGuardia
+      Cares, Paying for College, Peer Advisor Academy, Physical Therapist
+      Assistant Program, Transfer, Tutoring & Technology. Any Care Unit not on
+      the list is grouped as "Other" and flagged in the diagnostic modal.
+    - "Any Engagement" retained as the top-line reach metric.
+    - This resolves the app-vs-Tableau discrepancy (e.g., Academic Departments
+      744 vs 686): the app previously combined "Academic Departments & Library"
+      with "Physical Therapist Assistant Program" while Tableau showed raw Care
+      Units. Now both use raw Care Units and agree.
+    - All sections updated: score cards, detailed table (dynamic columns),
+      meeting frequency table, contributions table, monthly trends, Tableau
+      Engagement Records (dropped "Assigned Category" column — redundant with
+      Care Unit), Tableau Student Roster (flags now one per Care Unit + Any +
+      Other), Enhanced Student Data, Score Cards CSV, Data Dictionary, and
+      diagnostic modal.
   v6.1  2026-06-25
     - Advising rule updated: Location = "CUNY Edge" excluded from Advising
       categorization — CUNY Edge falls under Campus Life/Student Affairs division
@@ -183,7 +222,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 6.1</title>
+    <title>Navigate Student Engagement Metrics App - Version 6.3.1</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -763,13 +802,45 @@ tr:hover td { background: var(--paper); }
                     <p class="subtitle">Processes Navigate exports to calculate student engagement</p>
                 </div>
                 <div class="meta-box">
-                    <b>Version</b>      <span>6.1</span>
+                    <b>Version</b>      <span>6.3.1</span>
                     <b>Released</b>     <span>June 25, 2026</span>
                     <b>Developed by</b> <span>Josh Goldblatt using Claude</span>
                 </div>
             </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.3.1</div>
+                    <div class="version-date">June 26, 2026</div>
+                    <ul class="version-changes">
+                        <li>CARES case records are now always assigned Care Unit = "Student Affairs" and Location = "LaGuardia Cares" on load, so they categorize into Student Affairs in all tabulations and are correctly identified in the export files</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.3</div>
+                    <div class="version-date">June 26, 2026</div>
+                    <ul class="version-changes">
+                        <li>Updated the canonical Care Unit list to match the renamed backend reports (shifting from "&amp;" to "and" plus several renames)</li>
+                        <li>New list: Academic Departments, Advising, Athletics and Recreation, Career Services, Enrollment, First Year Seminar, ePortfolio and Technology, Paying for College, Peer Advisor Academy, Student Affairs, Transfer, Tutoring</li>
+                        <li>Removed: LaGuardia Cares, Physical Therapist Assistant Program, Campus Life (replaced by Student Affairs)</li>
+                        <li>Older semester files must be regenerated with the new Care Unit names; any unrecognized value falls into "Other"</li>
+                    </ul>
+                </div>
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.2</div>
+                    <div class="version-date">June 25, 2026</div>
+                    <ul class="version-changes">
+                        <li>Major change: the app now categorizes strictly by the raw Care Unit value in the uploaded files — no location-based logic, no combining of Care Units, no renaming</li>
+                        <li>Fixed canonical Care Unit list (alphabetical): Academic Departments &amp; Library, Advising, Campus Life, Career Services, Enrollment, LaGuardia Cares, Paying for College, Peer Advisor Academy, Physical Therapist Assistant Program, Transfer, Tutoring &amp; Technology. Anything else is grouped as "Other" and flagged in the diagnostic modal</li>
+                        <li>"Any Engagement" retained as the top-line reach metric</li>
+                        <li>Resolves the app-vs-Tableau discrepancy: the app previously combined "Academic Departments &amp; Library" with "Physical Therapist Assistant Program" while Tableau showed raw Care Units. Both now use raw Care Units and agree</li>
+                        <li>Dropped the "Assigned Category" column from the Tableau Engagement Records export (redundant with Care Unit); Student Roster flags are now one per Care Unit plus Any and Other</li>
+                        <li>All score cards, tables, monthly trends, exports, Data Dictionary, and diagnostic modal updated to the Care Unit basis</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 6.1</div>
@@ -1295,158 +1366,52 @@ tr:hover td { background: var(--paper); }
         <div class="collapsible-section" id="dataDictionarySection" style="display: none;">
             <div class="collapsible-header" onclick="toggleSection('dataDictionaryContent', this)">
                 <span class="toggle-icon">▶</span>
-                <h2 style="color: #2c3e50; font-size: 20px; margin: 0;">📖 Engagement Category Definitions</h2>
+                <h2 style="color: #2c3e50; font-size: 20px; margin: 0;">📖 Care Unit Categorization</h2>
             </div>
             <div class="collapsible-content" id="dataDictionaryContent">
-<div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p style="color: #4a5568; font-size: 14px;">
-                        <strong>How engagement is categorized:</strong><br>
-                        Engagement comes from three sources: <strong>Appointments</strong>, <strong>Events</strong>, and <strong>Cases</strong> (LaGuardia Cares). 
-                        Each is evaluated based on its <strong>Care Unit</strong> and (for appointments) <strong>Location</strong> values. 
-                        A student counts in a category if they have at least one qualifying appointment, event, or case.
+<div style="background: var(--paper); padding: 16px 18px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--line);">
+                    <p style="color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0;">
+                        <strong style="color: var(--ink);">How engagement is categorized:</strong> Each record is assigned to a category equal to its raw <strong>Care Unit</strong> value, exactly as it appears in the uploaded Navigate files. There is no location-based logic, no combining of Care Units, and no renaming. A student counts toward a Care Unit if they have at least one appointment, check-in, event, or CARES case in that Care Unit. <strong>"Any Engagement"</strong> counts a student who has at least one record in any Care Unit.
                     </p>
                 </div>
-                
-                <div style="display: grid; gap: 20px;">
-                    <!-- Advising Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #48bb78; font-size: 18px; margin-bottom: 15px;">✅ Advising Engagement</h3>
-                        <div style="background: #f0fff4; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
-                            <strong style="color: #22543d;">Appointment & Event Rule:</strong> Care Unit = "Advising" — any location counts
-                        </div>
-                        <p style="color: #718096; font-size: 13px;">No location restriction — all records with Care Unit = "Advising" are counted.</p>
-                    </div>
-                    
-                    <!-- Career Services Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #4299e1; font-size: 18px; margin-bottom: 15px;">💼 Career Services Engagement</h3>
-                        <div style="background: #ebf8ff; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #2b6cb0;">Appointment Rule:</strong> Care Unit = "Career Services"
-                        </div>
-                        <p style="margin-top: 10px; color: #718096; font-size: 13px;">Events do not currently contribute to this category</p>
-                    </div>
-                    
-                    <!-- Tutoring Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #ed8936; font-size: 18px; margin-bottom: 15px;">📖 Tutoring Engagement</h3>
-                        <div style="background: #fffaf0; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
-                            <strong style="color: #c05621;">Appointment Rule:</strong> Care Unit = "Tutoring & Technology" AND Location is one of the approved locations
-                        </div>
-                        <ul style="list-style-type: none; padding: 0; columns: 2;">
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Academic ESL Lab</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Academic Peer Instruction Tutoring</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Accounting Lab</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Anatomy & Physiology Study Hall</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">ASAP Tutoring</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">College Discovery</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Computer Science Lab</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Engineering Lab</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Math Tutoring Center</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Modern Language Lab</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Reading Lab</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Science Study Center</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Student Government Association Tutoring</li>
-                            <li style="padding: 5px 10px; background: #feebc8; border-left: 3px solid #ed8936; font-size: 13px; margin-bottom: 3px;">Writing Center</li>
+
+                <div style="display: grid; gap: 16px;">
+                    <div style="border: 1px solid var(--line); border-radius: 10px; padding: 18px;">
+                        <h3 style="color: var(--accent); font-size: 17px; margin-bottom: 12px;">🗂️ Canonical Care Units</h3>
+                        <p style="color: var(--ink-soft); font-size: 13.5px; margin-bottom: 12px;">The app recognizes the following fixed list of Care Units (alphabetical). Each gets its own score card, table column/row, and export flag:</p>
+                        <ul style="list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 24px;">
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Academic Departments</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Advising</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Athletics and Recreation</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Career Services</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Enrollment</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">First Year Seminar, ePortfolio and Technology</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Paying for College</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Peer Advisor Academy</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Student Affairs</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Transfer</li>
+                            <li style="padding: 6px 12px; background: var(--paper); border-left: 3px solid var(--accent); margin-bottom: 6px; font-size: 13px; border-radius: 0 6px 6px 0;">Tutoring</li>
                         </ul>
-                        <p style="margin-top: 10px; color: #718096; font-size: 13px;">Events do not currently contribute to this category</p>
                     </div>
 
-                    <!-- FYS, ePortfolio & Technology Support Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #0369a1; font-size: 18px; margin-bottom: 15px;">💻 FYS, ePortfolio & Technology Support Engagement</h3>
-                        <div style="background: #f0f9ff; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
-                            <strong style="color: #0369a1;">Appointment Rule:</strong> Care Unit = "Tutoring & Technology" AND Location is one of the approved locations
+                    <div style="border: 1px solid var(--line); border-radius: 10px; padding: 18px;">
+                        <h3 style="color: var(--teal); font-size: 17px; margin-bottom: 12px;">➕ "Other" &amp; "Any Engagement"</h3>
+                        <div style="background: var(--teal-soft); padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                            <strong style="color: var(--teal);">Other:</strong> <span style="color: var(--ink-soft); font-size: 13.5px;">Any record whose Care Unit is not on the canonical list above is grouped under "Other." The "Other" card and column only appear when such records exist, and they are listed in the diagnostic modal ("Show Uncategorized Appointments") so you can spot new or misspelled Care Units.</span>
                         </div>
-                        <ul style="list-style-type: none; padding: 0;">
-                            <li style="padding: 5px 10px; background: #e0f2fe; border-left: 3px solid #0369a1; font-size: 13px; margin-bottom: 3px;">ePortfolio Assistance</li>
-                            <li style="padding: 5px 10px; background: #e0f2fe; border-left: 3px solid #0369a1; font-size: 13px; margin-bottom: 3px;">FYS Student Success Hub</li>
-                            <li style="padding: 5px 10px; background: #e0f2fe; border-left: 3px solid #0369a1; font-size: 13px; margin-bottom: 3px;">Student Technology Mentors</li>
-                        </ul>
-                        <p style="margin-top: 10px; color: #718096; font-size: 13px;">Events do not currently contribute to this category</p>
-                    </div>
-
-                    <!-- Campus Life/Student Affairs Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #f43f5e; font-size: 18px; margin-bottom: 15px;">🏫 Campus Life/Student Affairs/Student Affairs Engagement</h3>
-                        <div style="background: #fef2f2; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                            <strong style="color: #881337;">Appointment Rules (ANY of these):</strong>
+                        <div style="background: var(--teal-soft); padding: 12px; border-radius: 6px;">
+                            <strong style="color: var(--teal);">Any Engagement:</strong> <span style="color: var(--ink-soft); font-size: 13.5px;">Counts every enrolled student with at least one record in any Care Unit — the top-line reach number.</span>
                         </div>
-                        <ul style="list-style-type: none; padding: 0; margin-bottom: 15px;">
-                            <li style="padding: 8px 12px; background: #fee; border-left: 3px solid #f43f5e; margin-bottom: 8px; font-size: 14px;">
-                                <strong>Option 1:</strong> Care Unit = "Campus Life" <em style="color:#718096;">(raw Navigate Care Unit value)</em>
-                            </li>
-                            <li style="padding: 8px 12px; background: #fee; border-left: 3px solid #f43f5e; margin-bottom: 8px; font-size: 14px;">
-                                <strong>Option 2:</strong> Location = "CUNY Edge" <em style="color: #9f1239;">(regardless of Care Unit)</em>
-                            </li>
-                            <li style="padding: 8px 12px; background: #fee; border-left: 3px solid #f43f5e; margin-bottom: 8px; font-size: 14px;">
-                                <strong>Option 3:</strong> Care Unit = "LaGuardia Cares" <em style="color: #9f1239;">(regardless of Location)</em>
-                            </li>
-                            <li style="padding: 8px 12px; background: #fee; border-left: 3px solid #f43f5e; margin-bottom: 8px; font-size: 14px;">
-                                <strong>Option 4:</strong> Location = "VP of Student Affairs" <em style="color: #9f1239;">(regardless of Care Unit)</em>
-                            </li>
-                        </ul>
-                        <div style="background: #fce7f3; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #831843;">Event Rule:</strong> Care Unit = "Campus Life" (raw Navigate value, case-insensitive)
-                        </div>
-                    </div>
-
-                    <!-- Athletics & Recreation Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #15803d; font-size: 18px; margin-bottom: 15px;">🏃 Athletics & Recreation Engagement</h3>
-                        <div style="background: #f0fdf4; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #15803d;">Appointment & Event Rule:</strong> Location = "Athletics & Recreation" (any Care Unit)
-                        </div>
-                    </div>
-                    
-                    <!-- Enrollment Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #9f7aea; font-size: 18px; margin-bottom: 15px;">📋 Enrollment Engagement</h3>
-                        <div style="background: #f3e8ff; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #44337a;">Appointment Rule:</strong> Care Unit = "Enrollment"
-                        </div>
-                        <p style="margin-top: 10px; color: #718096; font-size: 13px;">Location does not matter for this category. Events do not currently contribute.</p>
-                    </div>
-                    
-                    <!-- Paying for College Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #f59e0b; font-size: 18px; margin-bottom: 15px;">💰 Paying for College Engagement</h3>
-                        <div style="background: #fef3c7; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #78350f;">Appointment Rule:</strong> Care Unit = "Paying for College"
-                        </div>
-                        <p style="margin-top: 10px; color: #718096; font-size: 13px;">Location does not matter for this category. Events do not currently contribute.</p>
-                    </div>
-                    
-                    <!-- Academic Departments & Library Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #0891b2; font-size: 18px; margin-bottom: 15px;">📚 Academic Departments & Library Engagement</h3>
-                        <div style="background: #ecfeff; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                            <strong style="color: #155e75;">Appointment Rule:</strong> Care Unit = "Academic Departments & Library" OR "Physical Therapist Assistant Program"
-                        </div>
-                        <div style="background: #cffafe; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #155e75;">Event Rule:</strong> Care Unit = "Academic Departments & Library" OR "Physical Therapist Assistant Program" (case-insensitive)
-                        </div>
-                    </div>
-                    
-                    <!-- Transfer Support Category -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-                        <h3 style="color: #7c3aed; font-size: 18px; margin-bottom: 15px;">🔄 Transfer Support Engagement</h3>
-                        <div style="background: #f5f3ff; padding: 12px; border-radius: 5px;">
-                            <strong style="color: #5b21b6;">Appointment, Check-in & Event Rule:</strong> Care Unit = "Transfer" OR "Transfer Support" (any location)
-                        </div>
-                        <p style="margin-top: 10px; color: #718096; font-size: 13px;">Location is not used for this category — event locations are room numbers and would not match a fixed location string.</p>
                     </div>
                 </div>
-                
-                <div style="margin-top: 30px; padding: 20px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
-                    <h4 style="color: #0c4a6e; font-size: 16px; margin-bottom: 10px;">ℹ️ Important Notes:</h4>
-                    <ul style="color: #075985; font-size: 14px; line-height: 1.8;">
-                        <li><strong>"Any Engagement"</strong> counts all appointments, check-ins, AND events from enrolled students, regardless of category</li>
-                        <li>Appointments/events that don't meet any category criteria still count toward "Any Engagement" but not specific categories</li>
-                        <li>The <strong>"Show Uncategorized Appointments"</strong> button helps identify appointments not falling into defined categories</li>
-                        <li>Filters apply to both the source data and the categorization results</li>
-                        <li>Event categorization is <strong>case-insensitive</strong> (e.g., "ADVISING" and "advising" are treated the same)</li>
-                        <li>The <strong>Source</strong> column is now auto-generated: "Appointment" for appointment records, "Check-in" for check-in records, "CARES Case" for LaGuardia Cares cases</li>
-                        <li><strong>Tableau Exports:</strong> The Engagement Records and Student Roster exports join on Student ID. Use Student ID as the join key when setting up the relationship in Tableau.</li>
+
+                <div style="margin-top: 24px; padding: 18px; background: var(--teal-soft); border-radius: 10px; border-left: 4px solid var(--teal);">
+                    <h4 style="color: var(--teal); font-size: 15px; margin-bottom: 10px;">ℹ️ Important Notes</h4>
+                    <ul style="color: var(--ink-soft); font-size: 13.5px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                        <li>Categorization uses the raw <strong>Care Unit</strong> value only — Location is preserved in exports but no longer affects which category a record falls into.</li>
+                        <li>Two metrics are available per Care Unit: <strong>enrolled reach</strong> (unique enrolled students with ≥1 record) and <strong>total volume</strong> (count of all records, enrolled or not, shown in the Contributions table).</li>
+                        <li>The <strong>Source</strong> column is auto-generated: "Appointment", "Check-in", or "CARES Case".</li>
+                        <li><strong>Tableau Exports:</strong> The Engagement Records and Student Roster exports share Student ID + Semester. The "Assigned Category" column has been removed from the Engagement Records — use the <strong>Care Unit</strong> column directly. The Student Roster includes a <strong>Had [Care Unit] Engagement</strong> flag for each canonical Care Unit, plus Any and Other.</li>
                     </ul>
                 </div>
             </div>
@@ -1583,21 +1548,11 @@ tr:hover td { background: var(--paper); }
             <div class="table-container">
                 <h3>📋 Detailed Analysis by Earned Credits</h3>
                 <table id="detailedTable">
-                    <thead>
+                    <thead id="detailedTableHead">
                         <tr>
                             <th>Credit Range</th>
                             <th>Total Students</th>
                             <th>Any Engagement</th>
-                            <th>Advising</th>
-                            <th>Career</th>
-                            <th>Tutoring</th>
-                            <th>FYS, ePortfolio & Tech</th>
-                            <th>Campus Life/Student Affairs</th>
-                            <th>Athletics & Rec</th>
-                            <th>Enrollment</th>
-                            <th>Paying for College</th>
-                            <th>Academic Depts & Library</th>
-                            <th>Transfer Support</th>
                         </tr>
                     </thead>
                     <tbody id="detailedTableBody">
@@ -2431,7 +2386,7 @@ tr:hover td { background: var(--paper); }
                         return {
                             'Student ID': caseRecord['Student ID'],
                             'Student Name': caseRecord['Student Name'],
-                            'Care Unit': caseRecord['Care Unit'],
+                            'Care Unit': 'Student Affairs',
                             'Location': 'LaGuardia Cares',
                             'Reported Services': 'LaGuardia Cares Case',
                             'Reported Meeting Type': '',
@@ -3044,51 +2999,25 @@ tr:hover td { background: var(--paper); }
             const studentsWithEngagement = new Set();
             const studentsWithAppointments = new Set();
             const studentsWithEvents = new Set();
-            const studentsWithAdvising = new Set();
-            const studentsWithCareer = new Set();
-            const studentsWithTutoring = new Set();
-            const studentsWithFYSTech = new Set();
-            const studentsWithCampusLife = new Set();
-            const studentsWithAthletics = new Set();
-            const studentsWithEnrollment = new Set();
-            const studentsWithPayingForCollege = new Set();
-            const studentsWithAcademicDepts = new Set();
-            const studentsWithTransferSupport = new Set();
+            // Per-Care-Unit student sets (canonical list + Other)
+            const careUnitSets = {};
+            CANONICAL_CARE_UNITS.forEach(function(cu) { careUnitSets[cu] = new Set(); });
+            careUnitSets['Other'] = new Set();
 
             enrolledAppointments.forEach(function(appointment) {
                 const studentId = appointment['Student ID'];
                 studentsWithEngagement.add(studentId);
                 studentsWithAppointments.add(studentId);
-                const careUnit = appointment['Care Unit'] || '';
-                const location = appointment['Location'] || '';
-                if (isAdvisingAppointment(careUnit, location)) studentsWithAdvising.add(studentId);
-                if (isCareerAppointment(careUnit)) studentsWithCareer.add(studentId);
-                if (isTutoringAppointment(careUnit, location)) studentsWithTutoring.add(studentId);
-                if (isFYSTechAppointment(careUnit, location)) studentsWithFYSTech.add(studentId);
-                if (isCampusLifeAppointment(careUnit, location)) studentsWithCampusLife.add(studentId);
-                if (isAthleticsAppointment(careUnit, location)) studentsWithAthletics.add(studentId);
-                if (isEnrollmentAppointment(careUnit)) studentsWithEnrollment.add(studentId);
-                if (isPayingForCollegeAppointment(careUnit)) studentsWithPayingForCollege.add(studentId);
-                if (isAcademicDeptsAppointment(careUnit)) studentsWithAcademicDepts.add(studentId);
-                if (isTransferSupportAppointment(careUnit, location)) studentsWithTransferSupport.add(studentId);
+                const cat = getCareUnitCategory(appointment['Care Unit'] || '');
+                careUnitSets[cat].add(studentId);
             });
 
             enrolledEvents.forEach(function(event) {
                 const studentId = event['Student ID'];
                 studentsWithEngagement.add(studentId);
                 studentsWithEvents.add(studentId);
-                const careUnit = event['Care Unit'] || '';
-                const location = event['Location'] || '';
-                if (isAdvisingAppointment(careUnit, location)) studentsWithAdvising.add(studentId);
-                if (isCareerAppointment(careUnit)) studentsWithCareer.add(studentId);
-                if (isTutoringAppointment(careUnit, location)) studentsWithTutoring.add(studentId);
-                if (isFYSTechAppointment(careUnit, location)) studentsWithFYSTech.add(studentId);
-                if (isCampusLifeAppointment(careUnit, location)) studentsWithCampusLife.add(studentId);
-                if (isAthleticsAppointment(careUnit, location)) studentsWithAthletics.add(studentId);
-                if (isEnrollmentAppointment(careUnit)) studentsWithEnrollment.add(studentId);
-                if (isPayingForCollegeAppointment(careUnit)) studentsWithPayingForCollege.add(studentId);
-                if (isAcademicDeptsAppointment(careUnit)) studentsWithAcademicDepts.add(studentId);
-                if (isTransferSupportAppointment(careUnit, location)) studentsWithTransferSupport.add(studentId);
+                const cat = getCareUnitCategory(event['Care Unit'] || '');
+                careUnitSets[cat].add(studentId);
             });
 
             const studentsWithEventsOnly = new Set();
@@ -3109,18 +3038,15 @@ tr:hover td { background: var(--paper); }
 
             const cards = [
                 { title: 'Total Students', value: totalStudents, percentage: null },
-                { title: 'Any Engagement', value: studentsWithEngagement.size, percentage: totalStudents > 0 ? (studentsWithEngagement.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Advising', value: studentsWithAdvising.size, percentage: totalStudents > 0 ? (studentsWithAdvising.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Career Services', value: studentsWithCareer.size, percentage: totalStudents > 0 ? (studentsWithCareer.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Tutoring', value: studentsWithTutoring.size, percentage: totalStudents > 0 ? (studentsWithTutoring.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'FYS, ePortfolio & Technology Support', value: studentsWithFYSTech.size, percentage: totalStudents > 0 ? (studentsWithFYSTech.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Campus Life/Student Affairs', value: studentsWithCampusLife.size, percentage: totalStudents > 0 ? (studentsWithCampusLife.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Athletics & Recreation', value: studentsWithAthletics.size, percentage: totalStudents > 0 ? (studentsWithAthletics.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Enrollment', value: studentsWithEnrollment.size, percentage: totalStudents > 0 ? (studentsWithEnrollment.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Paying for College', value: studentsWithPayingForCollege.size, percentage: totalStudents > 0 ? (studentsWithPayingForCollege.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Academic Depts & Library', value: studentsWithAcademicDepts.size, percentage: totalStudents > 0 ? (studentsWithAcademicDepts.size / totalStudents * 100).toFixed(1) : 0 },
-                { title: 'Transfer Support', value: studentsWithTransferSupport.size, percentage: totalStudents > 0 ? (studentsWithTransferSupport.size / totalStudents * 100).toFixed(1) : 0 }
+                { title: 'Any Engagement', value: studentsWithEngagement.size, percentage: totalStudents > 0 ? (studentsWithEngagement.size / totalStudents * 100).toFixed(1) : 0 }
             ];
+            CANONICAL_CARE_UNITS.forEach(function(cu) {
+                cards.push({ title: cu, value: careUnitSets[cu].size, percentage: totalStudents > 0 ? (careUnitSets[cu].size / totalStudents * 100).toFixed(1) : 0 });
+            });
+            // Only show Other if it has any students
+            if (careUnitSets['Other'].size > 0) {
+                cards.push({ title: 'Other', value: careUnitSets['Other'].size, percentage: totalStudents > 0 ? (careUnitSets['Other'].size / totalStudents * 100).toFixed(1) : 0 });
+            }
 
             cards.forEach(function(card) {
                 const cardElement = document.createElement('div');
@@ -3235,18 +3161,12 @@ tr:hover td { background: var(--paper); }
             const totalStudents = filteredStudentData.length;
 
             const categories = [
-                { name: 'Any', check: function() { return true; } },
-                { name: 'Advising', check: function(cu, loc) { return isAdvisingAppointment(cu, loc); } },
-                { name: 'Career Services', check: function(cu) { return isCareerAppointment(cu); } },
-                { name: 'Tutoring', check: function(cu, loc) { return isTutoringAppointment(cu, loc); } },
-                { name: 'FYS, ePortfolio & Technology Support', check: function(cu, loc) { return isFYSTechAppointment(cu, loc); } },
-                { name: 'Campus Life/Student Affairs', check: function(cu, loc) { return isCampusLifeAppointment(cu, loc); } },
-                { name: 'Athletics & Recreation', check: function(cu, loc) { return isAthleticsAppointment(cu, loc); } },
-                { name: 'Enrollment', check: function(cu) { return isEnrollmentAppointment(cu); } },
-                { name: 'Paying for College', check: function(cu) { return isPayingForCollegeAppointment(cu); } },
-                { name: 'Academic Depts & Library', check: function(cu) { return isAcademicDeptsAppointment(cu); } },
-                { name: 'Transfer Support', check: function(cu, loc) { return isTransferSupportAppointment(cu, loc); } }
+                { name: 'Any', check: function() { return true; } }
             ];
+            CANONICAL_CARE_UNITS.forEach(function(cu) {
+                categories.push({ name: cu, check: function(recordCu) { return getCareUnitCategory(recordCu) === cu; } });
+            });
+            categories.push({ name: 'Other', check: function(recordCu) { return getCareUnitCategory(recordCu) === 'Other'; } });
 
             var bucketDefs = [
                 { label: '0', min: 0, max: 0 },
@@ -3389,7 +3309,7 @@ tr:hover td { background: var(--paper); }
             var header = ['Category'];
             bucketLabels.forEach(function(label) { header.push(label + ' (#)'); header.push(label + ' (%)'); });
             var rows = [header];
-            var categoryOrder = ['Any', 'Advising', 'Career Services', 'Tutoring', 'FYS, ePortfolio & Technology Support', 'Campus Life/Student Affairs', 'Athletics & Recreation', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
+            var categoryOrder = ['Any'].concat(CANONICAL_CARE_UNITS).concat(['Other']);
             categoryOrder.forEach(function(catName) {
                 var bucketCounts = window.meetingFrequencyData[catName];
                 if (!bucketCounts) return;
@@ -3522,7 +3442,7 @@ tr:hover td { background: var(--paper); }
                     return enrolledStudentIds.has(e['Student ID']) && e['Event Start Date/Time'];
                 });
                 const monthlyData = {};
-                const categoryKeys = ['Any', 'Advising', 'Career', 'Tutoring', 'FYS Tech', 'Campus Life/Student Affairs', 'Athletics', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
+                const categoryKeys = ['Any'].concat(CANONICAL_CARE_UNITS).concat(['Other']);
 
                 function ensureMonth(key) {
                     if (!monthlyData[key]) {
@@ -3533,16 +3453,8 @@ tr:hover td { background: var(--paper); }
 
                 function addToMonth(monthKey, studentId, careUnit, location) {
                     monthlyData[monthKey].Any.add(studentId);
-                    if (isAdvisingAppointment(careUnit, location)) monthlyData[monthKey].Advising.add(studentId);
-                    if (isCareerAppointment(careUnit)) monthlyData[monthKey].Career.add(studentId);
-                    if (isTutoringAppointment(careUnit, location)) monthlyData[monthKey].Tutoring.add(studentId);
-                    if (isFYSTechAppointment(careUnit, location)) monthlyData[monthKey]['FYS Tech'].add(studentId);
-                    if (isCampusLifeAppointment(careUnit, location)) monthlyData[monthKey]['Campus Life/Student Affairs'].add(studentId);
-                    if (isAthleticsAppointment(careUnit, location)) monthlyData[monthKey].Athletics.add(studentId);
-                    if (isEnrollmentAppointment(careUnit)) monthlyData[monthKey].Enrollment.add(studentId);
-                    if (isPayingForCollegeAppointment(careUnit)) monthlyData[monthKey]['Paying for College'].add(studentId);
-                    if (isAcademicDeptsAppointment(careUnit)) monthlyData[monthKey]['Academic Depts & Library'].add(studentId);
-                    if (isTransferSupportAppointment(careUnit, location)) monthlyData[monthKey]['Transfer Support'].add(studentId);
+                    var cat = getCareUnitCategory(careUnit);
+                    if (monthlyData[monthKey][cat]) monthlyData[monthKey][cat].add(studentId);
                 }
 
                 validAppointments.forEach(function(appointment) {
@@ -3575,8 +3487,9 @@ tr:hover td { background: var(--paper); }
                 });
 
                 const sortedMonths = Object.keys(monthlyData).sort();
-                const engagementTypes = ['Any', 'Advising', 'Career', 'Tutoring', 'FYS Tech', 'Campus Life/Student Affairs', 'Athletics', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
-                const colors = ['#22253a','#b5482e','#2e6e72','#c8922c','#3f7d57','#9c3c25','#235658','#8a6516','#336347','#565b76','#8b8fa6'];
+                const engagementTypes = ['Any'].concat(CANONICAL_CARE_UNITS).concat(['Other']);
+                const palette = ['#22253a','#b5482e','#2e6e72','#c8922c','#3f7d57','#9c3c25','#235658','#8a6516','#336347','#565b76','#8b8fa6','#a0522d','#6b7280'];
+                const colors = engagementTypes.map(function(t, i) { return palette[i % palette.length]; });
                 const datasets = engagementTypes.map(function(type, index) {
                     return { label: type, data: sortedMonths.map(function(month) { return monthlyData[month][type].size; }), borderColor: colors[index], backgroundColor: colors[index].replace('1)', '0.2)'), borderWidth: 2, tension: 0.1 };
                 });
@@ -3610,7 +3523,31 @@ tr:hover td { background: var(--paper); }
             ];
 
             let grandTotalStudents = 0;
-            const grandSets = { engagement: new Set(), advising: new Set(), career: new Set(), tutoring: new Set(), fysTech: new Set(), campusLife: new Set(), athletics: new Set(), enrollment: new Set(), payingForCollege: new Set(), academicDepts: new Set(), transferSupport: new Set() };
+            // Dynamic columns: Any + canonical Care Units (+ Other if present)
+            const detailCols = ['__any__'].concat(CANONICAL_CARE_UNITS);
+            var hasOther = false;
+            (function() {
+                var allRecs = enrolledAppointments.concat(enrolledEvents);
+                for (var i = 0; i < allRecs.length; i++) {
+                    if (getCareUnitCategory(allRecs[i]['Care Unit'] || '') === 'Other') { hasOther = true; break; }
+                }
+            })();
+            if (hasOther) detailCols.push('Other');
+
+            // Update table header to match dynamic columns
+            const detailHead = document.getElementById('detailedTableHead');
+            if (detailHead) {
+                var headHtml = '<tr><th>Credit Range</th><th>Total Students</th><th>Any Engagement</th>';
+                detailCols.forEach(function(c) {
+                    if (c === '__any__') return;
+                    headHtml += '<th>' + c + '</th>';
+                });
+                headHtml += '</tr>';
+                detailHead.innerHTML = headHtml;
+            }
+
+            function newSets() { var o = {}; detailCols.forEach(function(c) { o[c] = new Set(); }); return o; }
+            const grandSets = newSets();
 
             creditRanges.forEach(function(range) {
                 const studentsInRange = filteredStudentData.filter(function(s) {
@@ -3618,20 +3555,12 @@ tr:hover td { background: var(--paper); }
                     return credits >= range.min && credits <= range.max;
                 });
                 const studentIdsInRange = new Set(studentsInRange.map(function(s) { return s['Student ID']; }));
-                const sets = { engagement: new Set(), advising: new Set(), career: new Set(), tutoring: new Set(), fysTech: new Set(), campusLife: new Set(), athletics: new Set(), enrollment: new Set(), payingForCollege: new Set(), academicDepts: new Set(), transferSupport: new Set() };
+                const sets = newSets();
 
                 function processRecord(studentId, careUnit, location) {
-                    sets.engagement.add(studentId); grandSets.engagement.add(studentId);
-                    if (isAdvisingAppointment(careUnit, location)) { sets.advising.add(studentId); grandSets.advising.add(studentId); }
-                    if (isCareerAppointment(careUnit)) { sets.career.add(studentId); grandSets.career.add(studentId); }
-                    if (isTutoringAppointment(careUnit, location)) { sets.tutoring.add(studentId); grandSets.tutoring.add(studentId); }
-                    if (isFYSTechAppointment(careUnit, location)) { sets.fysTech.add(studentId); grandSets.fysTech.add(studentId); }
-                    if (isCampusLifeAppointment(careUnit, location)) { sets.campusLife.add(studentId); grandSets.campusLife.add(studentId); }
-                    if (isAthleticsAppointment(careUnit, location)) { sets.athletics.add(studentId); grandSets.athletics.add(studentId); }
-                    if (isEnrollmentAppointment(careUnit)) { sets.enrollment.add(studentId); grandSets.enrollment.add(studentId); }
-                    if (isPayingForCollegeAppointment(careUnit)) { sets.payingForCollege.add(studentId); grandSets.payingForCollege.add(studentId); }
-                    if (isAcademicDeptsAppointment(careUnit)) { sets.academicDepts.add(studentId); grandSets.academicDepts.add(studentId); }
-                    if (isTransferSupportAppointment(careUnit, location)) { sets.transferSupport.add(studentId); grandSets.transferSupport.add(studentId); }
+                    sets['__any__'].add(studentId); grandSets['__any__'].add(studentId);
+                    var cat = getCareUnitCategory(careUnit);
+                    if (sets[cat]) { sets[cat].add(studentId); grandSets[cat].add(studentId); }
                 }
 
                 enrolledAppointments.filter(function(a) { return studentIdsInRange.has(a['Student ID']); }).forEach(function(a) { processRecord(a['Student ID'], a['Care Unit'] || '', a['Location'] || ''); });
@@ -3644,8 +3573,10 @@ tr:hover td { background: var(--paper); }
                     return '<span class="number-cell">' + set.size.toLocaleString() + '</span> <span class="percentage-cell">(' + (totalInRange > 0 ? (set.size / totalInRange * 100).toFixed(1) : 0) + '%)</span>';
                 }
 
+                var rowHtml = '<td>' + range.label + '</td><td><span class="number-cell">' + totalInRange.toLocaleString() + '</span></td>';
+                detailCols.forEach(function(c) { rowHtml += '<td>' + cell(sets[c]) + '</td>'; });
                 const row = document.createElement('tr');
-                row.innerHTML = '<td>' + range.label + '</td><td><span class="number-cell">' + totalInRange.toLocaleString() + '</span></td><td>' + cell(sets.engagement) + '</td><td>' + cell(sets.advising) + '</td><td>' + cell(sets.career) + '</td><td>' + cell(sets.tutoring) + '</td><td>' + cell(sets.fysTech) + '</td><td>' + cell(sets.campusLife) + '</td><td>' + cell(sets.athletics) + '</td><td>' + cell(sets.enrollment) + '</td><td>' + cell(sets.payingForCollege) + '</td><td>' + cell(sets.academicDepts) + '</td><td>' + cell(sets.transferSupport) + '</td>';
+                row.innerHTML = rowHtml;
                 tbody.appendChild(row);
             });
 
@@ -3656,7 +3587,9 @@ tr:hover td { background: var(--paper); }
             const grandTotalRow = document.createElement('tr');
             grandTotalRow.style.fontWeight = 'bold';
             grandTotalRow.style.backgroundColor = 'var(--paper)';
-            grandTotalRow.innerHTML = '<td>Grand Total</td><td><span class="number-cell">' + grandTotalStudents.toLocaleString() + '</span></td><td>' + grandCell(grandSets.engagement) + '</td><td>' + grandCell(grandSets.advising) + '</td><td>' + grandCell(grandSets.career) + '</td><td>' + grandCell(grandSets.tutoring) + '</td><td>' + grandCell(grandSets.fysTech) + '</td><td>' + grandCell(grandSets.campusLife) + '</td><td>' + grandCell(grandSets.athletics) + '</td><td>' + grandCell(grandSets.enrollment) + '</td><td>' + grandCell(grandSets.payingForCollege) + '</td><td>' + grandCell(grandSets.academicDepts) + '</td><td>' + grandCell(grandSets.transferSupport) + '</td>';
+            var grandHtml = '<td>Grand Total</td><td><span class="number-cell">' + grandTotalStudents.toLocaleString() + '</span></td>';
+            detailCols.forEach(function(c) { grandHtml += '<td>' + grandCell(grandSets[c]) + '</td>'; });
+            grandTotalRow.innerHTML = grandHtml;
             tbody.appendChild(grandTotalRow);
         }
 
@@ -3756,21 +3689,16 @@ tr:hover td { background: var(--paper); }
 
             function ensureLocation(location) {
                 if (!locationData[location]) {
-                    locationData[location] = { students: new Set(), appointments: 0, checkins: 0, events: 0, categories: { 'Advising': new Set(), 'Career Services': new Set(), 'Tutoring': new Set(), 'FYS, ePortfolio & Technology Support': new Set(), 'Campus Life/Student Affairs': new Set(), 'Athletics & Recreation': new Set(), 'Enrollment': new Set(), 'Paying for College': new Set(), 'Academic Depts & Library': new Set(), 'Transfer Support': new Set() } };
+                    var cats = {};
+                    CANONICAL_CARE_UNITS.forEach(function(cu) { cats[cu] = new Set(); });
+                    cats['Other'] = new Set();
+                    locationData[location] = { students: new Set(), appointments: 0, checkins: 0, events: 0, categories: cats };
                 }
             }
 
             function categorizeRecord(careUnit, location, studentId) {
-                if (isAdvisingAppointment(careUnit, location)) locationData[location].categories['Advising'].add(studentId);
-                if (isCareerAppointment(careUnit)) locationData[location].categories['Career Services'].add(studentId);
-                if (isTutoringAppointment(careUnit, location)) locationData[location].categories['Tutoring'].add(studentId);
-                if (isFYSTechAppointment(careUnit, location)) locationData[location].categories['FYS, ePortfolio & Technology Support'].add(studentId);
-                if (isCampusLifeAppointment(careUnit, location)) locationData[location].categories['Campus Life/Student Affairs'].add(studentId);
-                if (isAthleticsAppointment(careUnit, location)) locationData[location].categories['Athletics & Recreation'].add(studentId);
-                if (isEnrollmentAppointment(careUnit)) locationData[location].categories['Enrollment'].add(studentId);
-                if (isPayingForCollegeAppointment(careUnit)) locationData[location].categories['Paying for College'].add(studentId);
-                if (isAcademicDeptsAppointment(careUnit)) locationData[location].categories['Academic Depts & Library'].add(studentId);
-                if (isTransferSupportAppointment(careUnit, location)) locationData[location].categories['Transfer Support'].add(studentId);
+                var cat = getCareUnitCategory(careUnit);
+                if (locationData[location].categories[cat]) locationData[location].categories[cat].add(studentId);
             }
 
             filteredAppointmentData.forEach(function(appointment) {
@@ -3801,18 +3729,23 @@ tr:hover td { background: var(--paper); }
 
             window.contributionsData = locationData;
 
-            const categoryConfig = [
-                { name: 'Advising', color: '#047857', bgColor: '#ecfdf5' },
-                { name: 'Career Services', color: '#1d4ed8', bgColor: '#eff6ff' },
-                { name: 'Tutoring', color: '#b45309', bgColor: '#fffbeb' },
-                { name: 'FYS, ePortfolio & Technology Support', color: '#0369a1', bgColor: '#f0f9ff' },
-                { name: 'Campus Life/Student Affairs', color: '#b91c1c', bgColor: '#fef2f2' },
-                { name: 'Athletics & Recreation', color: '#15803d', bgColor: '#f0fdf4' },
-                { name: 'Enrollment', color: '#7c3aed', bgColor: '#faf5ff' },
-                { name: 'Paying for College', color: '#a16207', bgColor: '#fefce8' },
-                { name: 'Academic Depts & Library', color: '#0e7490', bgColor: '#ecfeff' },
-                { name: 'Transfer Support', color: '#6d28d9', bgColor: '#f5f3ff' }
+            var ccPalette = [
+                { color: '#9c3c25', bgColor: '#f3ddd6' },
+                { color: '#047857', bgColor: '#ecfdf5' },
+                { color: '#b91c1c', bgColor: '#fef2f2' },
+                { color: '#1d4ed8', bgColor: '#eff6ff' },
+                { color: '#7c3aed', bgColor: '#faf5ff' },
+                { color: '#0e7490', bgColor: '#ecfeff' },
+                { color: '#a16207', bgColor: '#fefce8' },
+                { color: '#b45309', bgColor: '#fffbeb' },
+                { color: '#15803d', bgColor: '#f0fdf4' },
+                { color: '#6d28d9', bgColor: '#f5f3ff' },
+                { color: '#0369a1', bgColor: '#f0f9ff' },
+                { color: '#8a6516', bgColor: '#f4ecd9' }
             ];
+            const categoryConfig = CANONICAL_CARE_UNITS.concat(['Other']).map(function(cu, i) {
+                return { name: cu, color: ccPalette[i % ccPalette.length].color, bgColor: ccPalette[i % ccPalette.length].bgColor };
+            });
 
             categoryConfig.forEach(function(category) {
                 const contributingLocations = [];
@@ -3877,7 +3810,7 @@ tr:hover td { background: var(--paper); }
             if (!window.contributionsData) { alert('No data to export.'); return; }
             const locationData = window.contributionsData;
             const rows = [['Category', 'Location', 'Unique Students', 'Appointments', 'Check-ins', 'Events', 'Total']];
-            const categoryOrder = ['Advising', 'Career Services', 'Tutoring', 'FYS, ePortfolio & Technology Support', 'Campus Life/Student Affairs', 'Athletics & Recreation', 'Enrollment', 'Paying for College', 'Academic Depts & Library', 'Transfer Support'];
+            const categoryOrder = CANONICAL_CARE_UNITS.concat(['Other']);
             categoryOrder.forEach(function(category) {
                 const contributingLocations = [];
                 Object.keys(locationData).forEach(function(location) {
@@ -3908,34 +3841,26 @@ tr:hover td { background: var(--paper); }
         }
         window.exportContributions = exportContributions;
 
-        // ─── Category checking functions ─────────────────────────────────────────
-        function isAdvisingAppointment(careUnit, location) {
-            // CUNY Edge excluded — falls under Campus Life/Student Affairs division
-            return careUnit === 'Advising' && location !== 'CUNY Edge';
+        // ─── Care Unit categorization (raw Care Unit, fixed canonical list) ───────
+        // As of v6.2 the app categorizes strictly by the raw Care Unit value in the
+        // uploaded files — no location-based logic, no combining, no renaming.
+        const CANONICAL_CARE_UNITS = [
+            'Academic Departments',
+            'Advising',
+            'Athletics and Recreation',
+            'Career Services',
+            'Enrollment',
+            'First Year Seminar, ePortfolio and Technology',
+            'Paying for College',
+            'Peer Advisor Academy',
+            'Student Affairs',
+            'Transfer',
+            'Tutoring'
+        ];
+        function getCareUnitCategory(careUnit) {
+            var cu = (careUnit || '').trim();
+            return CANONICAL_CARE_UNITS.indexOf(cu) !== -1 ? cu : 'Other';
         }
-        function isCareerAppointment(careUnit) { return careUnit === 'Career Services'; }
-        function isTutoringAppointment(careUnit, location) {
-            const tutoringLocations = ['Academic ESL Lab', 'Academic Peer Instruction Tutoring', 'Accounting Lab', 'Anatomy & Physiology Study Hall', 'ASAP Tutoring', 'College Discovery', 'Computer Science Lab', 'Engineering Lab', 'Math Tutoring Center', 'Modern Language Lab', 'Reading Lab', 'Science Study Center', 'Student Government Association Tutoring', 'Writing Center'];
-            return careUnit === 'Tutoring & Technology' && tutoringLocations.indexOf(location) !== -1;
-        }
-        function isFYSTechAppointment(careUnit, location) {
-            const fysLocations = ['ePortfolio Assistance', 'Student Technology Mentors', 'FYS Student Success Hub'];
-            return careUnit === 'Tutoring & Technology' && fysLocations.indexOf(location) !== -1;
-        }
-        function isCampusLifeAppointment(careUnit, location) {
-            // Campus Life/Student Affairs: Care Unit = "Campus Life" (raw Navigate value),
-            // CUNY Edge, LaGuardia Cares, VP of Student Affairs (always maps here regardless of Care Unit)
-            // Athletics & Recreation excluded — has its own category
-            if (location === 'Athletics & Recreation') return false;
-            return careUnit === 'Campus Life' || location === 'CUNY Edge' || location === 'LaGuardia Cares' || location === 'VP of Student Affairs' || careUnit === 'LaGuardia Cares';
-        }
-        function isAthleticsAppointment(careUnit, location) {
-            return location === 'Athletics & Recreation';
-        }
-        function isEnrollmentAppointment(careUnit) { return careUnit === 'Enrollment'; }
-        function isPayingForCollegeAppointment(careUnit) { return careUnit === 'Paying for College'; }
-        function isAcademicDeptsAppointment(careUnit) { return careUnit === 'Academic Departments & Library' || careUnit === 'Physical Therapist Assistant Program'; }
-        function isTransferSupportAppointment(careUnit, location) { return careUnit === 'Transfer' || careUnit === 'Transfer Support'; }
 
         // ─── Shared CSV download helper ──────────────────────────────────────────
         function downloadCSV(rows, filename) {
@@ -3956,21 +3881,6 @@ tr:hover td { background: var(--paper); }
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        }
-
-        function getRecordCategories(careUnit, location) {
-            var cats = [];
-            if (isAdvisingAppointment(careUnit, location)) cats.push('Advising');
-            if (isCareerAppointment(careUnit)) cats.push('Career Services');
-            if (isTutoringAppointment(careUnit, location)) cats.push('Tutoring');
-            if (isFYSTechAppointment(careUnit, location)) cats.push('FYS, ePortfolio & Technology Support');
-            if (isCampusLifeAppointment(careUnit, location)) cats.push('Campus Life/Student Affairs');
-            if (isAthleticsAppointment(careUnit, location)) cats.push('Athletics & Recreation');
-            if (isEnrollmentAppointment(careUnit)) cats.push('Enrollment');
-            if (isPayingForCollegeAppointment(careUnit)) cats.push('Paying for College');
-            if (isAcademicDeptsAppointment(careUnit)) cats.push('Academic Depts & Library');
-            if (isTransferSupportAppointment(careUnit, location)) cats.push('Transfer Support');
-            return cats.length > 0 ? cats.join('; ') : 'Uncategorized';
         }
 
         // ─── Tableau Export: Engagement Records ──────────────────────────────────
@@ -4013,7 +3923,6 @@ tr:hover td { background: var(--paper); }
                         'Cumulative GPA':          isEnrolled ? attrs['Cumulative GPA'] : '',
                         'Academic Department':     isEnrolled ? attrs['Academic Department'] : '',
                         'Source':                  a['Source'] || 'Appointment',
-                        'Assigned Category':       getRecordCategories(careUnit, location),
                         'Care Unit':               careUnit,
                         'Location':                location,
                         'Engagement Date':         a['Reported Start Date'] || '',
@@ -4052,7 +3961,6 @@ tr:hover td { background: var(--paper); }
                             'Cumulative GPA':          isEnrolled ? attrs['Cumulative GPA'] : '',
                             'Academic Department':     isEnrolled ? attrs['Academic Department'] : '',
                             'Source':                  'Event',
-                            'Assigned Category':       getRecordCategories(careUnit, location),
                             'Care Unit':               careUnit,
                             'Location':                location,
                             'Engagement Date':         e['Event Start Date/Time'] || '',
@@ -4101,22 +4009,17 @@ tr:hover td { background: var(--paper); }
 
                 const studentEngagementMap = {};
                 filteredStudentData.forEach(function(student) {
-                    studentEngagementMap[student['Student ID']] = { any: false, advising: false, career: false, tutoring: false, fysTech: false, campusLife: false, athletics: false, enrollment: false, payingForCollege: false, academicDepts: false, transferSupport: false };
+                    var m = { any: false };
+                    CANONICAL_CARE_UNITS.forEach(function(cu) { m[cu] = false; });
+                    m['Other'] = false;
+                    studentEngagementMap[student['Student ID']] = m;
                 });
 
                 function markEngagement(sid, cu, loc) {
                     if (!studentEngagementMap[sid]) return;
                     studentEngagementMap[sid].any = true;
-                    if (isAdvisingAppointment(cu, loc)) studentEngagementMap[sid].advising = true;
-                    if (isCareerAppointment(cu)) studentEngagementMap[sid].career = true;
-                    if (isTutoringAppointment(cu, loc)) studentEngagementMap[sid].tutoring = true;
-                    if (isFYSTechAppointment(cu, loc)) studentEngagementMap[sid].fysTech = true;
-                    if (isCampusLifeAppointment(cu, loc)) studentEngagementMap[sid].campusLife = true;
-                    if (isAthleticsAppointment(cu, loc)) studentEngagementMap[sid].athletics = true;
-                    if (isEnrollmentAppointment(cu)) studentEngagementMap[sid].enrollment = true;
-                    if (isPayingForCollegeAppointment(cu)) studentEngagementMap[sid].payingForCollege = true;
-                    if (isAcademicDeptsAppointment(cu)) studentEngagementMap[sid].academicDepts = true;
-                    if (isTransferSupportAppointment(cu, loc)) studentEngagementMap[sid].transferSupport = true;
+                    var cat = getCareUnitCategory(cu);
+                    studentEngagementMap[sid][cat] = true;
                 }
 
                 enrolledAppointments.forEach(function(a) { markEngagement(a['Student ID'], a['Care Unit'] || '', a['Location'] || ''); });
@@ -4127,7 +4030,7 @@ tr:hover td { background: var(--paper); }
                 const rows = filteredStudentData.map(function(student) {
                     const sid = student['Student ID'];
                     const eng = studentEngagementMap[sid] || {};
-                    return {
+                    var row = {
                         'Student Name':                              resolveStudentName(student),
                         'Student ID':                               sid,
                         'Advising Office': student['Advising Office'] || '',
@@ -4137,20 +4040,15 @@ tr:hover td { background: var(--paper); }
                         'Student Type': student['Student Type'] || '',
                         'Major': student['MAJOR'] || '',
                         'Student Academic Department': student['Academic Department'] || '',
-                        'Had Any Engagement': eng.any ? 'Yes' : 'No',
-                        'Had Advising Engagement': eng.advising ? 'Yes' : 'No',
-                        'Had Career Services Engagement': eng.career ? 'Yes' : 'No',
-                        'Had Tutoring Engagement': eng.tutoring ? 'Yes' : 'No',
-                        'Had FYS ePortfolio & Technology Support Engagement': eng.fysTech ? 'Yes' : 'No',
-                        'Had Campus Life/Student Affairs Engagement': eng.campusLife ? 'Yes' : 'No',
-                        'Had Athletics & Recreation Engagement': eng.athletics ? 'Yes' : 'No',
-                        'Had Enrollment Engagement': eng.enrollment ? 'Yes' : 'No',
-                        'Had Paying for College Engagement': eng.payingForCollege ? 'Yes' : 'No',
-                        'Had Academic Depts & Library Engagement': eng.academicDepts ? 'Yes' : 'No',
-                        'Had Transfer Support Engagement': eng.transferSupport ? 'Yes' : 'No',
-                        'Semester': semesterLabel,
-                        'Report Date': reportDate
+                        'Had Any Engagement': eng.any ? 'Yes' : 'No'
                     };
+                    CANONICAL_CARE_UNITS.forEach(function(cu) {
+                        row['Had ' + cu + ' Engagement'] = eng[cu] ? 'Yes' : 'No';
+                    });
+                    row['Had Other Engagement'] = eng['Other'] ? 'Yes' : 'No';
+                    row['Semester'] = semesterLabel;
+                    row['Report Date'] = reportDate;
+                    return row;
                 });
 
                 const csv = Papa.unparse(rows);
@@ -4181,59 +4079,31 @@ tr:hover td { background: var(--paper); }
 
                 const studentEngagementMap = {};
                 filteredStudentData.forEach(function(student) {
-                    studentEngagementMap[student['Student ID']] = { any: false, advising: false, career: false, tutoring: false, fysTech: false, campusLife: false, athletics: false, enrollment: false, payingForCollege: false, academicDepts: false, transferSupport: false };
+                    var m = { any: false };
+                    CANONICAL_CARE_UNITS.forEach(function(cu) { m[cu] = false; });
+                    m['Other'] = false;
+                    studentEngagementMap[student['Student ID']] = m;
                 });
 
-                enrolledAppointments.forEach(function(appointment) {
-                    const studentId = appointment['Student ID'];
+                function markEng(studentId, careUnit) {
                     if (!studentEngagementMap[studentId]) return;
                     studentEngagementMap[studentId].any = true;
-                    const careUnit = appointment['Care Unit'] || '', location = appointment['Location'] || '';
-                    if (isAdvisingAppointment(careUnit, location)) studentEngagementMap[studentId].advising = true;
-                    if (isCareerAppointment(careUnit)) studentEngagementMap[studentId].career = true;
-                    if (isTutoringAppointment(careUnit, location)) studentEngagementMap[studentId].tutoring = true;
-                    if (isFYSTechAppointment(careUnit, location)) studentEngagementMap[studentId].fysTech = true;
-                    if (isCampusLifeAppointment(careUnit, location)) studentEngagementMap[studentId].campusLife = true;
-                    if (isAthleticsAppointment(careUnit, location)) studentEngagementMap[studentId].athletics = true;
-                    if (isEnrollmentAppointment(careUnit)) studentEngagementMap[studentId].enrollment = true;
-                    if (isPayingForCollegeAppointment(careUnit)) studentEngagementMap[studentId].payingForCollege = true;
-                    if (isAcademicDeptsAppointment(careUnit)) studentEngagementMap[studentId].academicDepts = true;
-                    if (isTransferSupportAppointment(careUnit, location)) studentEngagementMap[studentId].transferSupport = true;
-                });
-
-                enrolledEvents.forEach(function(event) {
-                    const studentId = event['Student ID'];
-                    if (!studentEngagementMap[studentId]) return;
-                    studentEngagementMap[studentId].any = true;
-                    const careUnit = event['Care Unit'] || '', location = event['Location'] || '';
-                    if (isAdvisingAppointment(careUnit, location)) studentEngagementMap[studentId].advising = true;
-                    if (isCareerAppointment(careUnit)) studentEngagementMap[studentId].career = true;
-                    if (isTutoringAppointment(careUnit, location)) studentEngagementMap[studentId].tutoring = true;
-                    if (isFYSTechAppointment(careUnit, location)) studentEngagementMap[studentId].fysTech = true;
-                    if (isCampusLifeAppointment(careUnit, location)) studentEngagementMap[studentId].campusLife = true;
-                    if (isAthleticsAppointment(careUnit, location)) studentEngagementMap[studentId].athletics = true;
-                    if (isEnrollmentAppointment(careUnit)) studentEngagementMap[studentId].enrollment = true;
-                    if (isPayingForCollegeAppointment(careUnit)) studentEngagementMap[studentId].payingForCollege = true;
-                    if (isAcademicDeptsAppointment(careUnit)) studentEngagementMap[studentId].academicDepts = true;
-                    if (isTransferSupportAppointment(careUnit, location)) studentEngagementMap[studentId].transferSupport = true;
-                });
+                    var cat = getCareUnitCategory(careUnit);
+                    studentEngagementMap[studentId][cat] = true;
+                }
+                enrolledAppointments.forEach(function(a) { markEng(a['Student ID'], a['Care Unit'] || ''); });
+                enrolledEvents.forEach(function(e) { markEng(e['Student ID'], e['Care Unit'] || ''); });
 
                 const enhancedData = filteredStudentData.map(function(student) {
                     const studentId = student['Student ID'];
-                    const engagementInfo = studentEngagementMap[studentId] || { any: false, advising: false, career: false, tutoring: false, fysTech: false, campusLife: false, athletics: false, enrollment: false, payingForCollege: false, academicDepts: false, transferSupport: false };
+                    const engagementInfo = studentEngagementMap[studentId] || {};
                     const enhancedStudent = Object.assign({}, student);
                     enhancedStudent['Semester'] = semesterLabel;
                     enhancedStudent['Had Any Engagement'] = engagementInfo.any ? 'Yes' : 'No';
-                    enhancedStudent['Had Advising Engagement'] = engagementInfo.advising ? 'Yes' : 'No';
-                    enhancedStudent['Had Career Services Engagement'] = engagementInfo.career ? 'Yes' : 'No';
-                    enhancedStudent['Had Tutoring Engagement'] = engagementInfo.tutoring ? 'Yes' : 'No';
-                    enhancedStudent['Had FYS ePortfolio & Technology Support Engagement'] = engagementInfo.fysTech ? 'Yes' : 'No';
-                    enhancedStudent['Had Campus Life/Student Affairs Engagement'] = engagementInfo.campusLife ? 'Yes' : 'No';
-                    enhancedStudent['Had Athletics & Recreation Engagement'] = engagementInfo.athletics ? 'Yes' : 'No';
-                    enhancedStudent['Had Enrollment Engagement'] = engagementInfo.enrollment ? 'Yes' : 'No';
-                    enhancedStudent['Had Paying for College Engagement'] = engagementInfo.payingForCollege ? 'Yes' : 'No';
-                    enhancedStudent['Had Academic Depts & Library Engagement'] = engagementInfo.academicDepts ? 'Yes' : 'No';
-                    enhancedStudent['Had Transfer Support Engagement'] = engagementInfo.transferSupport ? 'Yes' : 'No';
+                    CANONICAL_CARE_UNITS.forEach(function(cu) {
+                        enhancedStudent['Had ' + cu + ' Engagement'] = engagementInfo[cu] ? 'Yes' : 'No';
+                    });
+                    enhancedStudent['Had Other Engagement'] = engagementInfo['Other'] ? 'Yes' : 'No';
                     return enhancedStudent;
                 });
 
@@ -4274,35 +4144,22 @@ tr:hover td { background: var(--paper); }
                 const enrolledAppointments = filteredAppointmentData.filter(function(a) { return enrolledStudentIds.has(a['Student ID']); });
                 const enrolledEvents = (appointmentFiltersActive) ? [] : filteredEventData.filter(function(e) { return enrolledStudentIds.has(e['Student ID']); });
                 const totalStudents = enrolledStudentIds.size;
-                const sets = { engagement: new Set(), advising: new Set(), career: new Set(), tutoring: new Set(), fysTech: new Set(), campusLife: new Set(), athletics: new Set(), enrollment: new Set(), payingForCollege: new Set(), academicDepts: new Set(), transferSupport: new Set(), events: new Set() };
+                const sets = { engagement: new Set(), events: new Set() };
+                const cuSets = {};
+                CANONICAL_CARE_UNITS.forEach(function(cu) { cuSets[cu] = new Set(); });
+                cuSets['Other'] = new Set();
 
                 enrolledAppointments.forEach(function(a) {
-                    const sid = a['Student ID'], cu = a['Care Unit'] || '', loc = a['Location'] || '';
+                    const sid = a['Student ID'], cu = a['Care Unit'] || '';
                     sets.engagement.add(sid);
-                    if (isAdvisingAppointment(cu, loc)) sets.advising.add(sid);
-                    if (isCareerAppointment(cu)) sets.career.add(sid);
-                    if (isTutoringAppointment(cu, loc)) sets.tutoring.add(sid);
-                    if (isFYSTechAppointment(cu, loc)) sets.fysTech.add(sid);
-                    if (isCampusLifeAppointment(cu, loc)) sets.campusLife.add(sid);
-                    if (isAthleticsAppointment(cu, loc)) sets.athletics.add(sid);
-                    if (isEnrollmentAppointment(cu)) sets.enrollment.add(sid);
-                    if (isPayingForCollegeAppointment(cu)) sets.payingForCollege.add(sid);
-                    if (isAcademicDeptsAppointment(cu)) sets.academicDepts.add(sid);
-                    if (isTransferSupportAppointment(cu, loc)) sets.transferSupport.add(sid);
+                    var cat = getCareUnitCategory(cu);
+                    if (cuSets[cat]) cuSets[cat].add(sid);
                 });
                 enrolledEvents.forEach(function(e) {
-                    const sid = e['Student ID'], cu = e['Care Unit'] || '', loc = e['Location'] || '';
+                    const sid = e['Student ID'], cu = e['Care Unit'] || '';
                     sets.engagement.add(sid); sets.events.add(sid);
-                    if (isAdvisingAppointment(cu, loc)) sets.advising.add(sid);
-                    if (isCareerAppointment(cu)) sets.career.add(sid);
-                    if (isTutoringAppointment(cu, loc)) sets.tutoring.add(sid);
-                    if (isFYSTechAppointment(cu, loc)) sets.fysTech.add(sid);
-                    if (isCampusLifeAppointment(cu, loc)) sets.campusLife.add(sid);
-                    if (isAthleticsAppointment(cu, loc)) sets.athletics.add(sid);
-                    if (isEnrollmentAppointment(cu)) sets.enrollment.add(sid);
-                    if (isPayingForCollegeAppointment(cu)) sets.payingForCollege.add(sid);
-                    if (isAcademicDeptsAppointment(cu)) sets.academicDepts.add(sid);
-                    if (isTransferSupportAppointment(cu, loc)) sets.transferSupport.add(sid);
+                    var cat = getCareUnitCategory(cu);
+                    if (cuSets[cat]) cuSets[cat].add(sid);
                 });
 
                 const overallEnrollmentPct = allStudentsInData.size > 0 ? (enrolledStudentsInData.size / allStudentsInData.size * 100).toFixed(1) : 0;
@@ -4380,18 +4237,14 @@ tr:hover td { background: var(--paper); }
                     ['Total Enrolled Students', totalStudents, '', 'From student enrollment file'],
                     [],
                     ['--- Engagement ---', '', '', ''],
-                    ['Any Engagement', sets.engagement.size, pSet(sets.engagement), 'of total enrolled students'],
-                    ['Advising', sets.advising.size, pSet(sets.advising), 'of total enrolled students'],
-                    ['Career Services', sets.career.size, pSet(sets.career), 'of total enrolled students'],
-                    ['Tutoring', sets.tutoring.size, pSet(sets.tutoring), 'of total enrolled students'],
-                    ['FYS, ePortfolio & Technology Support', sets.fysTech.size, pSet(sets.fysTech), 'of total enrolled students'],
-                    ['Campus Life/Student Affairs', sets.campusLife.size, pSet(sets.campusLife), 'of total enrolled students'],
-                    ['Athletics & Recreation', sets.athletics.size, pSet(sets.athletics), 'of total enrolled students'],
-                    ['Enrollment', sets.enrollment.size, pSet(sets.enrollment), 'of total enrolled students'],
-                    ['Paying for College', sets.payingForCollege.size, pSet(sets.payingForCollege), 'of total enrolled students'],
-                    ['Academic Depts & Library', sets.academicDepts.size, pSet(sets.academicDepts), 'of total enrolled students'],
-                    ['Transfer Support', sets.transferSupport.size, pSet(sets.transferSupport), 'of total enrolled students']
+                    ['Any Engagement', sets.engagement.size, pSet(sets.engagement), 'of total enrolled students']
                 ];
+                CANONICAL_CARE_UNITS.forEach(function(cu) {
+                    rows.push([cu, cuSets[cu].size, pSet(cuSets[cu]), 'of total enrolled students']);
+                });
+                if (cuSets['Other'].size > 0) {
+                    rows.push(['Other', cuSets['Other'].size, pSet(cuSets['Other']), 'of total enrolled students']);
+                }
 
                 if (hasEventsData) {
                     rows.push(['Attended Events', sets.events.size, pSet(sets.events), 'of total enrolled students']);
@@ -4449,7 +4302,7 @@ tr:hover td { background: var(--paper); }
                 const enrolledEvents = (appointmentFiltersActive) ? [] : filteredEventData.filter(function(e) { return enrolledStudentIds.has(e['Student ID']); });
 
                 function isCategorized(cu, loc) {
-                    return isAdvisingAppointment(cu, loc) || isCareerAppointment(cu) || isTutoringAppointment(cu, loc) || isFYSTechAppointment(cu, loc) || isCampusLifeAppointment(cu, loc) || isAthleticsAppointment(cu, loc) || isEnrollmentAppointment(cu) || isPayingForCollegeAppointment(cu) || isAcademicDeptsAppointment(cu) || isTransferSupportAppointment(cu, loc);
+                    return getCareUnitCategory(cu) !== 'Other';
                 }
 
                 const uncategorizedAppointments = [], careUnitCounts = {}, combinationCounts = {}, uncategorizedStudents = new Set();
@@ -4518,7 +4371,7 @@ tr:hover td { background: var(--paper); }
                 if (serviceStrings.size > 0) content += '<p>Reduction: <strong>' + Math.round((1 - individualServices.length / serviceStrings.size) * 100) + '%</strong></p>';
                 content += '</div>';
 
-                content += '<div class="diagnostic-section" style="background: #f5f3ff; padding: 15px; border-radius: 5px; margin-top: 15px;"><h3>📖 Category Rules Reference</h3><ul style="font-size: 13px; margin-left: 20px; line-height: 1.8;"><li><strong>Advising:</strong> Care Unit = "Advising" (any location)</li><li><strong>Career Services:</strong> Care Unit = "Career Services"</li><li><strong>Tutoring:</strong> Care Unit = "Tutoring & Technology" + approved Location</li><li><strong>FYS, ePortfolio & Technology Support:</strong> Care Unit = "Tutoring & Technology" + Location is ePortfolio Assistance, FYS Student Success Hub, or Student Technology Mentors</li><li><strong>Campus Life:</strong> Care Unit = "Campus Life" OR "LaGuardia Cares" OR Location = "CUNY Edge" OR "VP of Student Affairs"</li><li><strong>Athletics & Recreation:</strong> Location = "Athletics & Recreation" (any Care Unit)</li><li><strong>Enrollment:</strong> Care Unit = "Enrollment"</li><li><strong>Paying for College:</strong> Care Unit = "Paying for College"</li><li><strong>Academic Depts & Library:</strong> Care Unit = "Academic Departments & Library"</li><li><strong>Transfer Support:</strong> Care Unit = "Transfer" OR "Transfer Support" (any location)</li></ul></div></div>';
+                content += '<div class="diagnostic-section" style="background: #f5f3ff; padding: 15px; border-radius: 5px; margin-top: 15px;"><h3>📖 Categorization Basis</h3><p style="font-size: 13px; line-height: 1.8;">As of v6.2, records are categorized strictly by their raw <strong>Care Unit</strong> value — no location logic, combining, or renaming. The canonical Care Units are: ' + CANONICAL_CARE_UNITS.join(', ') + '. Any record whose Care Unit is not on this list is grouped as <strong>Other</strong> and flagged above for review.</p></div></div>';
 
                 document.getElementById('diagnosticContent').innerHTML = content;
                 document.getElementById('diagnosticModal').style.display = 'block';
