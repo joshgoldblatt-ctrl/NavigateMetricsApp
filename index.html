@@ -1,12 +1,19 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      6.3.1
-  Released:     June 26, 2026
+  Version:      6.3.2
+  Released:     June 30, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v6.3.2  2026-06-30
+    - Fixed Academic Department reading from the roster: the app was looking for
+      a column named "Academic Department" but the roster file uses "Student
+      Academic Department". This caused the Academic Department filter to be
+      empty and the field to export blank. All reads now use "Student Academic
+      Department"; both the Engagement Records and Student Roster exports write
+      the column as "Student Academic Department" for consistency in Tableau.
   v6.3.1  2026-06-26
     - CARES case records are now always assigned Care Unit = "Student Affairs"
       and Location = "LaGuardia Cares" on load, so they categorize into the
@@ -222,7 +229,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 6.3.1</title>
+    <title>Navigate Student Engagement Metrics App - Version 6.3.2</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -802,13 +809,21 @@ tr:hover td { background: var(--paper); }
                     <p class="subtitle">Processes Navigate exports to calculate student engagement</p>
                 </div>
                 <div class="meta-box">
-                    <b>Version</b>      <span>6.3.1</span>
+                    <b>Version</b>      <span>6.3.2</span>
                     <b>Released</b>     <span>June 25, 2026</span>
                     <b>Developed by</b> <span>Josh Goldblatt using Claude</span>
                 </div>
             </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.3.2</div>
+                    <div class="version-date">June 30, 2026</div>
+                    <ul class="version-changes">
+                        <li>Fixed Academic Department: the app was reading a column named "Academic Department" but the roster file uses "Student Academic Department" — so the filter was empty and the field exported blank. All reads now use the correct column name, and both exports write it as "Student Academic Department"</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 6.3.1</div>
@@ -2756,7 +2771,7 @@ tr:hover td { background: var(--paper); }
             // Student-side filters — always from full data, independent
             populateFilterOptions('majorFilter',                  getUniqueValues(studentData, 'MAJOR'));
             populateFilterOptions('advisingOfficeFilter',         getUniqueValues(studentData, 'Advising Office'));
-            populateFilterOptions('academicDepartmentFilter',     getUniqueValues(studentData, 'Academic Department'));
+            populateFilterOptions('academicDepartmentFilter',     getUniqueValues(studentData, 'Student Academic Department'));
             populateFilterOptions('predictedSupportLevelFilter',  getUniqueValues(studentData, 'Predicted Support Level'));
 
             // Appointment-side filters — full data on initial load
@@ -2878,7 +2893,7 @@ tr:hover td { background: var(--paper); }
             filteredStudentData = studentData.filter(function(student) {
                 if (majorFilter.length > 0 && majorFilter.indexOf(student['MAJOR']) === -1) return false;
                 if (advisingOfficeFilter.length > 0 && advisingOfficeFilter.indexOf(student['Advising Office']) === -1) return false;
-                if (academicDepartmentFilter.length > 0 && academicDepartmentFilter.indexOf(student['Academic Department']) === -1) return false;
+                if (academicDepartmentFilter.length > 0 && academicDepartmentFilter.indexOf(student['Student Academic Department']) === -1) return false;
                 if (predictedSupportLevelFilter.length > 0 && predictedSupportLevelFilter.indexOf(student['Predicted Support Level']) === -1) return false;
                 return true;
             });
@@ -3899,7 +3914,7 @@ tr:hover td { background: var(--paper); }
                         'Major':                   s['MAJOR'] || '',
                         'Earned Credits':          s['Earned Credits'] || '',
                         'Cumulative GPA':          s['Cumulative GPA'] || '',
-                        'Academic Department':     s['Academic Department'] || ''
+                        'Student Academic Department':     s['Student Academic Department'] || ''
                     };
                 });
                 const reportDate = new Date().toLocaleDateString('en-US');
@@ -3921,7 +3936,7 @@ tr:hover td { background: var(--paper); }
                         'Major':                   isEnrolled ? attrs['Major'] : '',
                         'Earned Credits':          isEnrolled ? attrs['Earned Credits'] : '',
                         'Cumulative GPA':          isEnrolled ? attrs['Cumulative GPA'] : '',
-                        'Academic Department':     isEnrolled ? attrs['Academic Department'] : '',
+                        'Student Academic Department':     isEnrolled ? attrs['Student Academic Department'] : '',
                         'Source':                  a['Source'] || 'Appointment',
                         'Care Unit':               careUnit,
                         'Location':                location,
@@ -3959,7 +3974,7 @@ tr:hover td { background: var(--paper); }
                             'Major':                   isEnrolled ? attrs['Major'] : '',
                             'Earned Credits':          isEnrolled ? attrs['Earned Credits'] : '',
                             'Cumulative GPA':          isEnrolled ? attrs['Cumulative GPA'] : '',
-                            'Academic Department':     isEnrolled ? attrs['Academic Department'] : '',
+                            'Student Academic Department':     isEnrolled ? attrs['Student Academic Department'] : '',
                             'Source':                  'Event',
                             'Care Unit':               careUnit,
                             'Location':                location,
@@ -4039,7 +4054,7 @@ tr:hover td { background: var(--paper); }
                         'Predicted Support Level': student['Predicted Support Level'] || '',
                         'Student Type': student['Student Type'] || '',
                         'Major': student['MAJOR'] || '',
-                        'Student Academic Department': student['Academic Department'] || '',
+                        'Student Academic Department': student['Student Academic Department'] || '',
                         'Had Any Engagement': eng.any ? 'Yes' : 'No'
                     };
                     CANONICAL_CARE_UNITS.forEach(function(cu) {
