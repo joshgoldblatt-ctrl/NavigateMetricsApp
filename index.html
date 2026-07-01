@@ -1,12 +1,24 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      6.3.2
-  Released:     June 30, 2026
+  Version:      6.4
+  Released:     July 1, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v6.4  2026-07-01
+    - Added three staff organizer columns to the Tableau Engagement Records
+      export: "Staff Organizer Name", "Staff Organizer ID", "Staff Organizer
+      Team". Appointments read from Staff Organizer Name/ID/Team; check-ins read
+      from Staff Name/Staff ID (Team blank — no team field in check-in exports);
+      events blank. CARES cases retain their existing "Opened By" staff name.
+    - Semester column in ALL exports (Tableau Engagement Records, Tableau Student
+      Roster, Enhanced Student Data, Score Cards) now uses the compact code
+      format (e.g., "SP26", "FA25") instead of the spelled-out "Spring 2026".
+      Export filenames were already using the compact code, so they are
+      unchanged. The semester picker and in-app preview still display the
+      spelled-out label.
   v6.3.2  2026-06-30
     - Fixed Academic Department reading from the roster: the app was looking for
       a column named "Academic Department" but the roster file uses "Student
@@ -229,7 +241,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 6.3.2</title>
+    <title>Navigate Student Engagement Metrics App - Version 6.4</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -809,13 +821,22 @@ tr:hover td { background: var(--paper); }
                     <p class="subtitle">Processes Navigate exports to calculate student engagement</p>
                 </div>
                 <div class="meta-box">
-                    <b>Version</b>      <span>6.3.2</span>
-                    <b>Released</b>     <span>June 25, 2026</span>
+                    <b>Version</b>      <span>6.4</span>
+                    <b>Released</b>     <span>July 1, 2026</span>
                     <b>Developed by</b> <span>Josh Goldblatt using Claude</span>
                 </div>
             </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.4</div>
+                    <div class="version-date">July 1, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added three staff organizer columns to the Tableau Engagement Records export: "Staff Organizer Name", "Staff Organizer ID", "Staff Organizer Team" — appointments read from the Staff Organizer fields, check-ins from Staff Name/Staff ID (Team blank), events blank</li>
+                        <li>Semester column in all exports (both Tableau exports, Enhanced Student Data, Score Cards) now uses the compact code format (e.g., "SP26") instead of "Spring 2026"; filenames and the on-screen picker are unchanged</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 6.3.2</div>
@@ -2342,6 +2363,7 @@ tr:hover td { background: var(--paper); }
                             'Reported Start Time': row['Check In Time'] || '',
                             'Appointment Created By': '',
                             'Staff Organizer Name': row['Staff Name'] || '',
+                            'Staff Organizer ID': row['Staff ID'] || '',
                             'Source': 'Check-in'
                         };
                     });
@@ -3901,7 +3923,7 @@ tr:hover td { background: var(--paper); }
         // ─── Tableau Export: Engagement Records ──────────────────────────────────
         function exportTableauEngagement() {
             try {
-                const semesterLabel = getSemesterLabel();
+                const semesterLabel = getSemesterCode();
                 const enrolledStudentIds = new Set();
                 filteredStudentData.forEach(function(s) { enrolledStudentIds.add(s['Student ID']); });
                 // Expanded roster attribute map — all demographic fields
@@ -3942,6 +3964,9 @@ tr:hover td { background: var(--paper); }
                         'Location':                location,
                         'Engagement Date':         a['Reported Start Date'] || '',
                         'Appointment Created By':  a['Source'] === 'Check-in' || a['Source'] === 'CARES Case' ? '' : (a['Appointment Created By'] || ''),
+                        'Staff Organizer Name':    a['Staff Organizer Name'] || '',
+                        'Staff Organizer ID':      a['Staff Organizer ID'] || '',
+                        'Staff Organizer Team':    a['Staff Organizer Team'] || '',
                         'Reported Services':       a['Reported Services'] || '',
                         'Reported Course Name':    a['Reported Course Name'] || '',
                         'Courses Course Number':   a['Reported Course Number'] || a['Courses Course Number'] || '',
@@ -3980,6 +4005,9 @@ tr:hover td { background: var(--paper); }
                             'Location':                location,
                             'Engagement Date':         e['Event Start Date/Time'] || '',
                             'Appointment Created By':  '',
+                            'Staff Organizer Name':    '',
+                            'Staff Organizer ID':      '',
+                            'Staff Organizer Team':    '',
                             'Reported Services':       '',
                             'Reported Course Name':    '',
                             'Courses Course Number':   '',
@@ -4016,7 +4044,7 @@ tr:hover td { background: var(--paper); }
         // ─── Tableau Export: Student Roster ──────────────────────────────────────
         function exportTableauStudentRoster() {
             try {
-                const semesterLabel = getSemesterLabel();
+                const semesterLabel = getSemesterCode();
                 const enrolledStudentIds = new Set();
                 filteredStudentData.forEach(function(s) { enrolledStudentIds.add(s['Student ID']); });
                 const enrolledAppointments = filteredAppointmentData.filter(function(a) { return enrolledStudentIds.has(a['Student ID']); });
@@ -4086,7 +4114,7 @@ tr:hover td { background: var(--paper); }
         // ─── Export Enhanced Student Data ────────────────────────────────────────
         function exportEnhancedStudentData() {
             try {
-                const semesterLabel = getSemesterLabel();
+                const semesterLabel = getSemesterCode();
                 const enrolledStudentIds = new Set();
                 filteredStudentData.forEach(function(s) { enrolledStudentIds.add(s['Student ID']); });
                 const enrolledAppointments = filteredAppointmentData.filter(function(a) { return enrolledStudentIds.has(a['Student ID']); });
@@ -4142,7 +4170,7 @@ tr:hover td { background: var(--paper); }
         // ─── Export Score Cards ───────────────────────────────────────────────────
         function exportScoreCards() {
             try {
-                const semesterLabel = getSemesterLabel();
+                const semesterLabel = getSemesterCode();
                 const enrolledStudentIds = new Set();
                 filteredStudentData.forEach(function(s) { enrolledStudentIds.add(s['Student ID']); });
                 const allStudentsInData = new Set(), enrolledStudentsInData = new Set();
