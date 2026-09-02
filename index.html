@@ -1,12 +1,26 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      6.4
-  Released:     July 1, 2026
+  Version:      6.5
+  Released:     September 2, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v6.5  2026-09-02
+    - New "Tableau Export: Service Records" — a service-level export with one
+      row per record per reported service. Multi-service strings are split on
+      commas NOT inside parentheses, so names like "Award Status (Pell, TAP,
+      Scholarships)" stay intact. Events are included with the Event Display
+      Name as the Service value; records with no reported services (and events
+      with no display name) produce no rows. Columns: Student Name, Student ID,
+      Enrolled, Source, Care Unit, Location, Engagement Date, Service, Staff
+      Organizer Name, Staff Organizer ID, Staff Organizer Team, Semester,
+      Report Date. Filename: [SEMESTER]_Tableau_Service_Records.csv.
+    - IMPORTANT: connect this file as its OWN Tableau data source. Do not union
+      it with the Engagement Records — a record reporting multiple services
+      appears once per service here, so mixing the two would multi-count
+      volume.
   v6.4  2026-07-01
     - Added three staff organizer columns to the Tableau Engagement Records
       export: "Staff Organizer Name", "Staff Organizer ID", "Staff Organizer
@@ -241,7 +255,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 6.4</title>
+    <title>Navigate Student Engagement Metrics App - Version 6.5</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -821,13 +835,23 @@ tr:hover td { background: var(--paper); }
                     <p class="subtitle">Processes Navigate exports to calculate student engagement</p>
                 </div>
                 <div class="meta-box">
-                    <b>Version</b>      <span>6.4</span>
-                    <b>Released</b>     <span>July 1, 2026</span>
+                    <b>Version</b>      <span>6.5</span>
+                    <b>Released</b>     <span>September 2, 2026</span>
                     <b>Developed by</b> <span>Josh Goldblatt using Claude</span>
                 </div>
             </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.5</div>
+                    <div class="version-date">September 2, 2026</div>
+                    <ul class="version-changes">
+                        <li>New "Tableau Export: Service Records" button — a service-level export with one row per record per reported service, enabling service-level analysis in Tableau (meetings per service, unique students per service)</li>
+                        <li>Multi-service strings are split on commas outside parentheses, so service names like "Award Status (Pell, TAP, Scholarships)" stay intact; events are included with the Event Display Name as the Service value</li>
+                        <li>Connect this export as its own Tableau data source — do not union it with the Engagement Records, since a record with multiple services appears once per service</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 6.4</div>
@@ -1488,6 +1512,10 @@ tr:hover td { background: var(--paper); }
             
             <button class="export-btn" style="background: #e85d04;" onmouseover="this.style.background='#c44d03'" onmouseout="this.style.background='#e85d04'" onclick="exportTableauStudentRoster()">
                 👤 Tableau Export: Student Roster
+            </button>
+            
+            <button class="export-btn" style="background: #e85d04;" onmouseover="this.style.background='#c44d03'" onmouseout="this.style.background='#e85d04'" onclick="exportServiceRecords()">
+                🧩 Tableau Export: Service Records
             </button>
             
             <!-- Events Info Badge -->
@@ -4110,6 +4138,89 @@ tr:hover td { background: var(--paper); }
             }
         }
         window.exportTableauStudentRoster = exportTableauStudentRoster;
+
+        // ─── Service-level export (v6.5): one row per record per reported service ──
+        // Splits multi-service strings on commas NOT inside parentheses, so values
+        // like "Award Status (Pell, TAP, Scholarships)" stay intact.
+        function splitReportedServices(services) {
+            if (!services) return [];
+            return services.split(/,\s*(?![^()]*\))/)
+                .map(function(p) { return p.trim(); })
+                .filter(function(p) { return p.length > 0; });
+        }
+
+        function exportServiceRecords() {
+            try {
+                const semesterLabel = getSemesterCode();
+                const enrolledStudentIds = new Set();
+                filteredStudentData.forEach(function(s) { enrolledStudentIds.add(s['Student ID']); });
+                const reportDate = new Date().toLocaleDateString('en-US');
+                const rows = [];
+
+                filteredAppointmentData.forEach(function(a) {
+                    const services = splitReportedServices(a['Reported Services'] || '');
+                    if (services.length === 0) return; // records with no reported services produce no rows
+                    const sid = (a['Student ID'] || '').toString().trim();
+                    const isEnrolled = enrolledStudentIds.has(sid);
+                    services.forEach(function(svc) {
+                        rows.push({
+                            'Student Name':         a['Student Name'] || '',
+                            'Student ID':           sid,
+                            'Enrolled':             isEnrolled ? 'Yes' : 'No',
+                            'Source':               a['Source'] || 'Appointment',
+                            'Care Unit':            a['Care Unit'] || '',
+                            'Location':             a['Location'] || '',
+                            'Engagement Date':      a['Reported Start Date'] || '',
+                            'Service':              svc,
+                            'Staff Organizer Name': a['Staff Organizer Name'] || '',
+                            'Staff Organizer ID':   a['Staff Organizer ID'] || '',
+                            'Staff Organizer Team': a['Staff Organizer Team'] || '',
+                            'Semester':             semesterLabel,
+                            'Report Date':          reportDate
+                        });
+                    });
+                });
+
+                if (!appointmentFiltersActive && hasEventsData) {
+                    filteredEventData.forEach(function(e) {
+                        const eventName = (e['Event Display Name'] || '').trim();
+                        if (!eventName) return; // events without a display name produce no rows
+                        const sid = (e['Student ID'] || '').toString().trim();
+                        const isEnrolled = enrolledStudentIds.has(sid);
+                        rows.push({
+                            'Student Name':         e['Student Name'] || '',
+                            'Student ID':           sid,
+                            'Enrolled':             isEnrolled ? 'Yes' : 'No',
+                            'Source':               'Event',
+                            'Care Unit':            e['Care Unit'] || '',
+                            'Location':             e['Location'] || '',
+                            'Engagement Date':      e['Event Start Date/Time'] || '',
+                            'Service':              eventName,
+                            'Staff Organizer Name': '',
+                            'Staff Organizer ID':   '',
+                            'Staff Organizer Team': '',
+                            'Semester':             semesterLabel,
+                            'Report Date':          reportDate
+                        });
+                    });
+                }
+
+                const csv = Papa.unparse(rows);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.setAttribute('href', URL.createObjectURL(blob));
+                link.setAttribute('download', buildFilename('Tableau_Service_Records'));
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showSuccess('Tableau Service Records exported! ' + rows.length + ' service rows.');
+            } catch (error) {
+                console.error('Error exporting service records:', error);
+                showError('Error exporting data: ' + error.message);
+            }
+        }
+        window.exportServiceRecords = exportServiceRecords;
 
         // ─── Export Enhanced Student Data ────────────────────────────────────────
         function exportEnhancedStudentData() {
