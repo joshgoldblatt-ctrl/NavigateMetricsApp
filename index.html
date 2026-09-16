@@ -1,12 +1,20 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      6.6.1
+  Version:      6.7
   Released:     September 16, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v6.7  2026-09-16
+    - Records with Care Unit "Physical Therapist Assistant Program" are now
+      assigned to Care Unit "Academic Departments" on load (appointments,
+      check-ins, and events; Location preserved), so they categorize under
+      Academic Departments in all tabulations and exports instead of "Other".
+      This is the second documented assignment alongside CARES cases →
+      Student Affairs; all other categorization remains strictly by raw
+      Care Unit. Data Dictionary and diagnostic modal updated to note both.
   v6.6.1  2026-09-16
     - Student File upload note updated: added "Graduation Status (optional,
       SP26 forward)" and corrected "Academic Department" to "Student Academic
@@ -269,7 +277,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 6.6.1</title>
+    <title>Navigate Student Engagement Metrics App - Version 6.7</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -849,13 +857,22 @@ tr:hover td { background: var(--paper); }
                     <p class="subtitle">Processes Navigate exports to calculate student engagement</p>
                 </div>
                 <div class="meta-box">
-                    <b>Version</b>      <span>6.6.1</span>
+                    <b>Version</b>      <span>6.7</span>
                     <b>Released</b>     <span>September 16, 2026</span>
                     <b>Developed by</b> <span>Josh Goldblatt using Claude</span>
                 </div>
             </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.7</div>
+                    <div class="version-date">September 16, 2026</div>
+                    <ul class="version-changes">
+                        <li>Records with Care Unit "Physical Therapist Assistant Program" are now assigned to "Academic Departments" on load (appointments, check-ins, events; Location preserved) — they categorize under Academic Departments in all tabulations and exports instead of "Other"</li>
+                        <li>Data Dictionary and diagnostic modal updated to document the two Care Unit assignments (CARES cases → Student Affairs; PTA → Academic Departments)</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 6.6.1</div>
@@ -1463,7 +1480,7 @@ tr:hover td { background: var(--paper); }
             <div class="collapsible-content" id="dataDictionaryContent">
 <div style="background: var(--paper); padding: 16px 18px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--line);">
                     <p style="color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0;">
-                        <strong style="color: var(--ink);">How engagement is categorized:</strong> Each record is assigned to a category equal to its raw <strong>Care Unit</strong> value, exactly as it appears in the uploaded Navigate files. There is no location-based logic, no combining of Care Units, and no renaming. A student counts toward a Care Unit if they have at least one appointment, check-in, event, or CARES case in that Care Unit. <strong>"Any Engagement"</strong> counts a student who has at least one record in any Care Unit.
+                        <strong style="color: var(--ink);">How engagement is categorized:</strong> Each record is assigned to a category equal to its raw <strong>Care Unit</strong> value, exactly as it appears in the uploaded Navigate files. There is no location-based logic, no combining of Care Units, and no renaming, with two documented assignments: CARES case records are assigned Care Unit "Student Affairs" (Location "LaGuardia Cares"), and records with Care Unit "Physical Therapist Assistant Program" are assigned to "Academic Departments" (Location preserved). A student counts toward a Care Unit if they have at least one appointment, check-in, event, or CARES case in that Care Unit. <strong>"Any Engagement"</strong> counts a student who has at least one record in any Care Unit.
                     </p>
                 </div>
 
@@ -2385,7 +2402,7 @@ tr:hover td { background: var(--paper); }
                 appointmentData = await parseCSVFile(appointmentFile, function(progress) {
                     updateProgress(30 + progress * 20, `Processing appointment data: ${Math.round(progress * 100)}%`);
                 });
-                appointmentData.forEach(function(row) { row['Source'] = 'Appointment'; });
+                appointmentData.forEach(function(row) { row['Source'] = 'Appointment'; row['Care Unit'] = normalizeCareUnit(row['Care Unit']); });
                 console.log(`Loaded ${appointmentData.length} appointment records`);
 
                 // ── Dedup appointments ──────────────────────────────────────────
@@ -2412,7 +2429,7 @@ tr:hover td { background: var(--paper); }
                         return {
                             'Student ID': row['Student ID'] || '',
                             'Student Name': row['Student Name'] || '',
-                            'Care Unit': row['Care Unit'] || '',
+                            'Care Unit': normalizeCareUnit(row['Care Unit'] || ''),
                             'Location': row['Location'] || '',
                             'Reported Services': row['Student Services'] || '',
                             'Reported Course Name': row['Course Name'] || '',
@@ -2468,6 +2485,7 @@ tr:hover td { background: var(--paper); }
                         updateProgress(55 + progress * 5, `Processing events data: ${Math.round(progress * 100)}%`);
                     });
                     hasEventsData = true;
+                    eventData.forEach(function(row) { row['Care Unit'] = normalizeCareUnit(row['Care Unit']); });
                     console.log(`Loaded ${eventData.length} event records`);
                 } else {
                     eventData = [];
@@ -3954,6 +3972,15 @@ tr:hover td { background: var(--paper); }
             'Transfer',
             'Tutoring'
         ];
+        // v6.7: Care Unit assignment — Physical Therapist Assistant Program records
+        // are assigned to Academic Departments (Location preserved). Applied on load
+        // to appointments, check-ins, and events; CARES cases are separately
+        // hardcoded to Student Affairs on load.
+        function normalizeCareUnit(careUnit) {
+            var cu = (careUnit || '').trim();
+            return cu === 'Physical Therapist Assistant Program' ? 'Academic Departments' : cu;
+        }
+
         function getCareUnitCategory(careUnit) {
             var cu = (careUnit || '').trim();
             return CANONICAL_CARE_UNITS.indexOf(cu) !== -1 ? cu : 'Other';
@@ -4561,7 +4588,7 @@ tr:hover td { background: var(--paper); }
                 if (serviceStrings.size > 0) content += '<p>Reduction: <strong>' + Math.round((1 - individualServices.length / serviceStrings.size) * 100) + '%</strong></p>';
                 content += '</div>';
 
-                content += '<div class="diagnostic-section" style="background: #f5f3ff; padding: 15px; border-radius: 5px; margin-top: 15px;"><h3>📖 Categorization Basis</h3><p style="font-size: 13px; line-height: 1.8;">As of v6.2, records are categorized strictly by their raw <strong>Care Unit</strong> value — no location logic, combining, or renaming. The canonical Care Units are: ' + CANONICAL_CARE_UNITS.join(', ') + '. Any record whose Care Unit is not on this list is grouped as <strong>Other</strong> and flagged above for review.</p></div></div>';
+                content += '<div class="diagnostic-section" style="background: #f5f3ff; padding: 15px; border-radius: 5px; margin-top: 15px;"><h3>📖 Categorization Basis</h3><p style="font-size: 13px; line-height: 1.8;">As of v6.2, records are categorized strictly by their raw <strong>Care Unit</strong> value — no location logic, combining, or renaming — with two documented assignments: CARES cases → Student Affairs, and Physical Therapist Assistant Program → Academic Departments. The canonical Care Units are: ' + CANONICAL_CARE_UNITS.join(', ') + '. Any record whose Care Unit is not on this list is grouped as <strong>Other</strong> and flagged above for review.</p></div></div>';
 
                 document.getElementById('diagnosticContent').innerHTML = content;
                 document.getElementById('diagnosticModal').style.display = 'block';
