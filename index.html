@@ -1,12 +1,17 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      6.6
-  Released:     September 2, 2026
+  Version:      6.6.1
+  Released:     September 16, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v6.6.1  2026-09-16
+    - Student File upload note updated: added "Graduation Status (optional,
+      SP26 forward)" and corrected "Academic Department" to "Student Academic
+      Department" (the column the app has actually read since v6.3.2). UI text
+      only — no logic changes.
   v6.6  2026-09-02
     - Added "Graduation Status" to the Tableau Engagement Records export
       (populated for enrolled students, blank for unenrolled) and the Tableau
@@ -264,7 +269,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 6.6</title>
+    <title>Navigate Student Engagement Metrics App - Version 6.6.1</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -844,13 +849,21 @@ tr:hover td { background: var(--paper); }
                     <p class="subtitle">Processes Navigate exports to calculate student engagement</p>
                 </div>
                 <div class="meta-box">
-                    <b>Version</b>      <span>6.6</span>
-                    <b>Released</b>     <span>September 2, 2026</span>
+                    <b>Version</b>      <span>6.6.1</span>
+                    <b>Released</b>     <span>September 16, 2026</span>
                     <b>Developed by</b> <span>Josh Goldblatt using Claude</span>
                 </div>
             </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.6.1</div>
+                    <div class="version-date">September 16, 2026</div>
+                    <ul class="version-changes">
+                        <li>Student File upload note: added "Graduation Status (optional, SP26 forward)" and corrected "Academic Department" to "Student Academic Department" — UI text only, no logic changes</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 6.6</div>
@@ -1214,8 +1227,9 @@ tr:hover td { background: var(--paper); }
                         • MAJOR (or Major)<br>
                         • Earned Credits<br>
                         • Advising Office<br>
-                        • Academic Department<br>
-                        • Predicted Support Level
+                        • Student Academic Department<br>
+                        • Predicted Support Level<br>
+                        • Graduation Status (optional, SP26 forward)
                     </div>
                 </div>
 
