@@ -1,12 +1,21 @@
 <!--
 ================================================================================
   App:          Navigate Student Engagement Metrics App
-  Version:      6.5
+  Version:      6.6
   Released:     September 2, 2026
   Developed by: Josh Goldblatt using Claude
 ================================================================================
   CHANGELOG (most recent first)
 --------------------------------------------------------------------------------
+  v6.6  2026-09-02
+    - Added "Graduation Status" to the Tableau Engagement Records export
+      (populated for enrolled students, blank for unenrolled) and the Tableau
+      Student Roster export. Read from the roster file column "Graduation
+      Status"; values pass through as-is, including semicolon-separated
+      multi-status combos. Rosters without the column (semesters before SP26)
+      export it blank. The per-status flag columns ("Graduation Status: ...")
+      are NOT added to the Tableau exports; they still pass through the
+      Enhanced Student Data export automatically.
   v6.5  2026-09-02
     - New "Tableau Export: Service Records" — a service-level export with one
       row per record per reported service. Multi-service strings are split on
@@ -255,7 +264,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigate Student Engagement Metrics App - Version 6.5</title>
+    <title>Navigate Student Engagement Metrics App - Version 6.6</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -835,13 +844,22 @@ tr:hover td { background: var(--paper); }
                     <p class="subtitle">Processes Navigate exports to calculate student engagement</p>
                 </div>
                 <div class="meta-box">
-                    <b>Version</b>      <span>6.5</span>
+                    <b>Version</b>      <span>6.6</span>
                     <b>Released</b>     <span>September 2, 2026</span>
                     <b>Developed by</b> <span>Josh Goldblatt using Claude</span>
                 </div>
             </div>
             <div class="update-history-toggle" onclick="toggleUpdateHistory()">📋 Update History ▼</div>
             <div class="update-history-panel" id="updateHistoryPanel">
+
+                <div class="version-entry">
+                    <div class="version-header">Version 6.6</div>
+                    <div class="version-date">September 2, 2026</div>
+                    <ul class="version-changes">
+                        <li>Added "Graduation Status" (from the roster file) to the Tableau Engagement Records export (enrolled students only) and the Tableau Student Roster export — values pass through as-is; semesters whose roster lacks the column export it blank</li>
+                        <li>The per-status "Graduation Status: ..." flag columns are not included in the Tableau exports (they still flow through Enhanced Student Data)</li>
+                    </ul>
+                </div>
 
                 <div class="version-entry">
                     <div class="version-header">Version 6.5</div>
@@ -3964,7 +3982,8 @@ tr:hover td { background: var(--paper); }
                         'Major':                   s['MAJOR'] || '',
                         'Earned Credits':          s['Earned Credits'] || '',
                         'Cumulative GPA':          s['Cumulative GPA'] || '',
-                        'Student Academic Department':     s['Student Academic Department'] || ''
+                        'Student Academic Department':     s['Student Academic Department'] || '',
+                        'Graduation Status':       s['Graduation Status'] || ''
                     };
                 });
                 const reportDate = new Date().toLocaleDateString('en-US');
@@ -3987,6 +4006,7 @@ tr:hover td { background: var(--paper); }
                         'Earned Credits':          isEnrolled ? attrs['Earned Credits'] : '',
                         'Cumulative GPA':          isEnrolled ? attrs['Cumulative GPA'] : '',
                         'Student Academic Department':     isEnrolled ? attrs['Student Academic Department'] : '',
+                        'Graduation Status':       isEnrolled ? attrs['Graduation Status'] : '',
                         'Source':                  a['Source'] || 'Appointment',
                         'Care Unit':               careUnit,
                         'Location':                location,
@@ -4028,6 +4048,7 @@ tr:hover td { background: var(--paper); }
                             'Earned Credits':          isEnrolled ? attrs['Earned Credits'] : '',
                             'Cumulative GPA':          isEnrolled ? attrs['Cumulative GPA'] : '',
                             'Student Academic Department':     isEnrolled ? attrs['Student Academic Department'] : '',
+                            'Graduation Status':       isEnrolled ? attrs['Graduation Status'] : '',
                             'Source':                  'Event',
                             'Care Unit':               careUnit,
                             'Location':                location,
@@ -4111,6 +4132,7 @@ tr:hover td { background: var(--paper); }
                         'Student Type': student['Student Type'] || '',
                         'Major': student['MAJOR'] || '',
                         'Student Academic Department': student['Student Academic Department'] || '',
+                        'Graduation Status': student['Graduation Status'] || '',
                         'Had Any Engagement': eng.any ? 'Yes' : 'No'
                     };
                     CANONICAL_CARE_UNITS.forEach(function(cu) {
